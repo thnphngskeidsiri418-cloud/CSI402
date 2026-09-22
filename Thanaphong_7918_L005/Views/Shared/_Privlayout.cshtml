@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - Game Top-Up Platform</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-[#120a21] text-white font-sans antialiased min-h-screen flex flex-col justify-between">
+
+    <!-- ================= NAVBAR ================= -->
+    <header class="bg-[#1e1233] border-b border-purple-900/40 sticky top-0 z-30 px-4 py-3">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+            
+            <!-- Left: Logo & Menu Button -->
+            <div class="flex items-center gap-3">
+                <button id="openSidebar" class="p-2 hover:bg-purple-800/40 rounded-lg transition text-gray-300 focus:outline-none">
+                    <i data-lucide="menu" class="w-6 h-6"></i>
+                </button>
+                <a asp-controller="Home" asp-action="Index" class="font-bold text-xl tracking-wider text-purple-400 flex items-center gap-2">
+                    <i data-lucide="gamepad-2" class="w-7 h-7 text-purple-500"></i>
+                    TOPUP<span class="text-white">GAME</span>
+                </a>
+            </div>
+
+            <!-- Center: Search Bar -->
+            <div class="hidden md:flex flex-1 max-w-md relative">
+                <input 
+                    type="text" 
+                    placeholder="ค้นหาเกม หรือ บัตรเติมเงิน..." 
+                    class="w-full bg-[#120a21] border border-purple-800/50 rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-purple-500 text-gray-200 placeholder-gray-500"
+                >
+                <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-3 text-gray-400"></i>
+            </div>
+
+            <!-- Right: Language & Auth -->
+            <div class="flex items-center gap-3">
+                <button class="hidden sm:flex items-center gap-1.5 text-xs bg-purple-950/60 border border-purple-800/40 px-3 py-1.5 rounded-full hover:bg-purple-900/50">
+                    <i data-lucide="globe" class="w-3.5 h-3.5 text-purple-400"></i>
+                    <span>TH</span>
+                </button>
+                <a asp-controller="Account" asp-action="Register" class="bg-purple-600 hover:bg-purple-500 text-white font-medium text-sm px-4 py-1.5 rounded-full transition shadow-lg shadow-purple-600/30">
+                    ลงทะเบียน
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- ================= SIDEBAR OVERLAY & DRAWER ================= -->
+    <div id="backdrop" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 hidden transition-opacity"></div>
+
+    <aside id="sidebar" class="fixed top-0 left-0 h-full w-80 bg-[#1c1130] text-white z-50 transform -translate-x-full transition-transform duration-300 flex flex-col justify-between shadow-2xl border-r border-purple-900/30">
+        <div>
+            <!-- Close Header -->
+            <div class="p-4 border-b border-purple-900/30 flex justify-between items-center">
+                <span class="text-xs text-gray-400">ยินดีต้อนรับสู่ TopupGame</span>
+                <button id="closeSidebar" class="p-1 hover:bg-purple-800/30 rounded-lg text-gray-400 hover:text-white focus:outline-none">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Sidebar Content -->
+            <div class="p-6">
+                <h2 class="text-xl font-bold mb-4">ลงทะเบียน TopUpGame!</h2>
+                <ul class="space-y-4 mb-6">
+                    <li class="flex items-start gap-3">
+                        <div class="p-2 bg-purple-900/50 text-purple-400 rounded-lg shrink-0">
+                            <i data-lucide="percent" class="w-4 h-4"></i>
+                        </div>
+                        <span class="text-sm text-gray-300">รับโปรโมชั่นและข้อเสนอสุดพิเศษเป็นคนแรก</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <div class="p-2 bg-purple-900/50 text-purple-400 rounded-lg shrink-0">
+                            <i data-lucide="history" class="w-4 h-4"></i>
+                        </div>
+                        <span class="text-sm text-gray-300">ตรวจสอบประวัติการชำระเงินได้ง่าย</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <div class="p-2 bg-purple-900/50 text-purple-400 rounded-lg shrink-0">
+                            <i data-lucide="shield-check" class="w-4 h-4"></i>
+                        </div>
+                        <span class="text-sm text-gray-300">รวดเร็วและปลอดภัยมากยิ่งขึ้น</span>
+                    </li>
+                </ul>
+
+                <div class="space-y-2.5">
+                    <a asp-controller="Account" asp-action="Register" class="block text-center w-full bg-purple-600 hover:bg-purple-500 text-white font-semibold py-2.5 rounded-full text-sm transition shadow-md shadow-purple-600/30">
+                        ลงทะเบียน ฟรี
+                    </a>
+                    <a asp-controller="Account" asp-action="Login" class="block text-center w-full bg-white hover:bg-gray-100 text-gray-900 font-semibold py-2.5 rounded-full text-sm transition">
+                        เข้าสู่ระบบ
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-4 border-t border-purple-900/30 text-xs text-gray-400 flex justify-between items-center bg-[#170e28]">
+            <span>ประเทศไทย (Thailand)</span>
+            <div class="flex items-center gap-1">
+                <i data-lucide="globe" class="w-3.5 h-3.5"></i> ภาษาไทย
+            </div>
+        </div>
+    </aside>
+
+    <!-- ================= DYNAMIC BODY CONTENT ================= -->
+    <main class="max-w-7xl mx-auto px-4 py-6 flex-1 w-full">
+        @RenderBody()
+    </main>
+
+    <!-- ================= FOOTER ================= -->
+    <footer class="bg-[#170e28] border-t border-purple-900/30 py-6 mt-12 text-center text-xs text-gray-500">
+        <p>&copy; @DateTime.Now.Year TopUpGame Platform. All rights reserved.</p>
+    </footer>
+
+    <!-- JavaScript สำหรับควบคุม Sidebar Drawer -->
+    <script>
+        lucide.createIcons();
+
+        const sidebar = document.getElementById('sidebar');
+        const backdrop = document.getElementById('backdrop');
+        const openBtn = document.getElementById('openSidebar');
+        const closeBtn = document.getElementById('closeSidebar');
+
+        function toggleSidebar() {
+            const isHidden = sidebar.classList.contains('-translate-x-full');
+            if (isHidden) {
+                sidebar.classList.remove('-translate-x-full');
+                backdrop.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                backdrop.classList.add('hidden');
+            }
+        }
+
+        openBtn.addEventListener('click', toggleSidebar);
+        closeBtn.addEventListener('click', toggleSidebar);
+        backdrop.addEventListener('click', toggleSidebar);
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

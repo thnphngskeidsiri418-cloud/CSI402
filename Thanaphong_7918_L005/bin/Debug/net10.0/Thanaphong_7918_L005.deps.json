@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v10.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v10.0": {
+      "Thanaphong_7918_L005/1.0.0": {
+        "runtime": {
+          "Thanaphong_7918_L005.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Thanaphong_7918_L005/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}
