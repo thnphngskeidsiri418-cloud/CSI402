@@ -1,0 +1,29 @@
+@model Thanaphong_7918_L005.Models.LoginViewModel
+
+@{
+    ViewData["Title"] = "เข้าสู่ระบบ";
+    Layout = "_RegisterLayout";
+}
+
+<!-- เพิ่ม asp-controller="Account" เพื่อให้ชี้ไปยัง Controller ที่ถูกต้อง -->
+<form asp-action="Login" asp-controller="Account" method="post" class="space-y-4">
+    
+    <!-- ช่องกรอก Email เปลี่ยนเป็น asp-for="Email" เพื่อผูกกับ ViewModel -->
+    <div>
+        <input type="email" asp-for="Email" placeholder="ใส่อีเมลของคุณที่นี่" 
+               class="w-full bg-[#0f111a] border border-gray-700 rounded-full py-3 px-4 text-center text-gray-200 placeholder-gray-500 focus:outline-none focus:border-purple-500 transition" required />
+    </div>
+    
+    <!-- ช่องกรอก Password เปลี่ยนเป็น asp-for="Password" -->
+    <div>
+        <input type="password" asp-for="Password" placeholder="ใส่รหัสผ่าน" 
+               class="w-full bg-[#0f111a] border border-gray-700 rounded-full py-3 px-4 text-center text-gray-200 placeholder-gray-500 focus:outline-none focus:border-purple-500 transition" required />
+    </div>
+    
+    <div class="pt-2">
+        <button type="submit" 
+                class="w-full bg-white hover:bg-gray-200 text-gray-900 font-bold py-3 rounded-full transition shadow-md">
+            เข้าสู่ระบบ
+        </button>
+    </div>
+</form>

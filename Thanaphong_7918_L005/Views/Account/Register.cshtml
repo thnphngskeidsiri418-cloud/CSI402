@@ -1,0 +1,37 @@
+@model Thanaphong_7918_L005.Models.RegisterViewModel
+
+@{
+    ViewData["Title"] = "ลงทะเบียน";
+    Layout = "_RegisterLayout";
+}
+
+<!-- กำหนดจุดหมายของ Form ไปที่ Account Controller และ Action Register -->
+<form asp-action="Register" asp-controller="Account" method="post" class="space-y-4">
+    
+    <!-- ช่องกรอก Email -->
+    <div>
+        <input type="email" asp-for="Email" placeholder="ใส่ Email ของคุณที่นี่" 
+               class="w-full bg-[#0f111a] border border-gray-700 rounded-full py-3 px-4 text-center text-gray-200 placeholder-gray-500 focus:outline-none focus:border-purple-500 transition" required />
+    </div>
+    
+    <!-- ช่องกรอก Name (เชื่อมกับ asp-for="Name" ตาม ViewModel ของคุณ) -->
+    <div>
+        <input type="text" asp-for="Name" placeholder="ชื่อผู้ใช้ที่ทำการสั่งซื้อ" 
+               class="w-full bg-[#0f111a] border border-gray-700 rounded-full py-3 px-4 text-center text-gray-200 placeholder-gray-500 focus:outline-none focus:border-purple-500 transition" required />
+    </div>
+    
+    <!-- ช่องกรอก Password -->
+    <div>
+        <input type="password" asp-for="Password" placeholder="ใส่รหัสผ่าน" 
+               class="w-full bg-[#0f111a] border border-gray-700 rounded-full py-3 px-4 text-center text-gray-200 placeholder-gray-500 focus:outline-none focus:border-purple-500 transition" required />
+    </div>
+    
+    <!-- ปุ่ม Submit -->
+    <div class="pt-2">
+        <button type="submit" 
+                class="w-full bg-white hover:bg-gray-200 text-gray-900 font-bold py-3 rounded-full transition shadow-md">
+            ต่อไป
+        </button>
+    </div>
+
+</form>
