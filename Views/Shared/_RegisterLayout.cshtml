@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - TopUpGame</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-[#0f111a] text-gray-200 font-sans antialiased min-h-screen flex flex-col justify-between">
+
+    <!-- ================= TOP NAVBAR ================= -->
+    <header class="h-16 bg-[#161926] border-b border-gray-800 px-6 flex items-center justify-between sticky top-0 z-20">
+        <!-- ฝั่งซ้าย: เมนู และ โลโก้ -->
+        <div class="flex items-center gap-4">
+            <button class="p-2 text-gray-400 hover:text-white">
+                <i data-lucide="menu" class="w-6 h-6"></i>
+            </button>
+            <a href="/" class="text-xl font-bold tracking-wider text-white">LOGO</a>
+        </div>
+
+        <!-- ฝั่งขวา: เมนูตามแบบโครงร่าง (ค้นหา, คะแนน, ภาษา, ลงทะเบียน/เข้าสู่ระบบ) -->
+        <div class="flex items-center space-x-1 sm:space-x-4 text-sm font-medium">
+            <a href="#" class="px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800/60 rounded-lg transition">ค้นหา</a>
+            <a href="#" class="px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800/60 rounded-lg transition">คะแนน</a>
+            <a href="#" class="px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800/60 rounded-lg transition">ภาษา</a>
+            <a href="/Home/Register" class="px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">ลงทะเบียน/เข้าสู่ระบบ</a>
+        </div>
+    </header>
+
+    <!-- ================= MAIN CONTENT (ตรงกลางสำหรับฟอร์ม Register) ================= -->
+    <main class="flex-1 flex items-center justify-center p-6">
+        <div class="bg-[#161926] p-8 rounded-2xl border border-gray-800 shadow-2xl w-full max-w-md">
+            <h3 class="text-2xl font-bold text-white text-center mb-6">@ViewData["Title"]</h3>
+            
+            <!-- ดึงฟอร์มจากหน้า Register มาแสดงตรงนี้ -->
+            @RenderBody()
+        </div>
+    </main>
+
+    <!-- ================= FOOTER ================= -->
+    <footer class="bg-[#161926] border-t border-gray-800 py-4 text-center text-sm text-gray-400">
+        ช่องทางการติดต่อ/ขอความช่วยเหลือ/ช่องทางการติดตามข่าวสาร
+    </footer>
+
+    <!-- Script สำหรับโหลดไอคอน Lucide -->
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

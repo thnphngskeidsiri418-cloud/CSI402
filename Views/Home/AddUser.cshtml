@@ -1,0 +1,35 @@
+@{
+    ViewData["Title"] = "เพิ่มผู้ใช้งาน";
+    Layout = "_RegisterLayout";
+}
+
+<form asp-action="AddUser" method="post" class="space-y-4">
+    <div>
+        <input type="email" name="Email" placeholder="ใส่อีเมลผู้ใช้" 
+               class="w-full bg-[#0f111a] border border-gray-700 rounded-full py-3 px-4 text-center text-gray-200 placeholder-gray-500 focus:outline-none focus:border-purple-500 transition" required />
+    </div>
+    
+    <div>
+        <input type="text" name="Username" placeholder="ชื่อผู้ใช้งาน" 
+               class="w-full bg-[#0f111a] border border-gray-700 rounded-full py-3 px-4 text-center text-gray-200 placeholder-gray-500 focus:outline-none focus:border-purple-500 transition" required />
+    </div>
+
+    <div>
+        <input type="password" name="Password" placeholder="รหัสผ่าน" 
+               class="w-full bg-[#0f111a] border border-gray-700 rounded-full py-3 px-4 text-center text-gray-200 placeholder-gray-500 focus:outline-none focus:border-purple-500 transition" required />
+    </div>
+
+    <div>
+        <select name="Role" class="w-full bg-[#0f111a] border border-gray-700 rounded-full py-3 px-4 text-center text-gray-200 focus:outline-none focus:border-purple-500 transition">
+            <option value="User">User</option>
+            <option value="Admin">Admin</option>
+        </select>
+    </div>
+    
+    <div class="pt-2">
+        <button type="submit" 
+                class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-full transition shadow-md">
+            บันทึกผู้ใช้
+        </button>
+    </div>
+</form>
