@@ -27,7 +27,6 @@ namespace Thanaphong_7918_L005.Controllers
         [HttpPost]
         public IActionResult Register(RegisterViewModel data)
         {
-            // รับค่าแล้ว ส่ง Name และ Email ไปแสดงที่หน้า Home/Index[cite: 2]
             return RedirectToAction("Index", "Home", new { name = data.Name, email = data.Email });
         }
     }

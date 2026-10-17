@@ -1,8 +1,15 @@
+using Microsoft.EntityFrameworkCore;
+using Thanaphong_7918_L005.Models;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
+builder.Services.AddDbContext<Csi402dbContext>(
+    options => options.UseMySql(
+    builder.Configuration.GetConnectionString("DefaultConnection"), 
+    ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))));
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

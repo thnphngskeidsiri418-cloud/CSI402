@@ -5,7 +5,58 @@ using Thanaphong_7918_L005.Models;
 namespace Thanaphong_7918_L005.Controllers;
 
 public class HomeController : Controller
+
+{   private readonly Csi402dbContext _db;
+
+    public HomeController(Csi402dbContext db)
+    {
+        _db = db;
+    }
+    public IActionResult Lab9()
+    {
+        return View();
+    }
+    [HttpPost]public IActionResult Lab9(User data)
 {
+    if (data.PasswordHash != null)
+    {
+        if (ModelState.IsValid)
+        {
+            var CheckUser = (from a in _db.Users where a.Email == data.Email select a).FirstOrDefault();
+            if (CheckUser == null)
+            {
+                // Create || Insert Value in SQL
+                User s = new();
+                s.Username = data.Username;
+                s.PasswordHash = data.PasswordHash;
+                s.Email = data.Email;
+                s.Role = data.Role;
+
+                _db.Add(s);
+                _db.SaveChanges();
+                return View(data);
+            }
+            else
+            {
+                ViewBag.Status = "Email ซ้ำ";
+                return View(data);
+            }
+        }
+    }
+    else
+    {
+        ViewBag.Status = "Password Null";
+        return View(data);
+    }
+
+    return View(data);
+}
+    public IActionResult Lab9_1()
+{
+    var users = (from s in _db.Users select s).ToList();
+    // Select * From Users
+    return View(users);
+}
     // สร้าง List เก็บข้อมูลผู้ใช้ชั่วคราว (จำลองฐานข้อมูลสำหรับหน้า UserList)
     private static List<UserViewModel> _userList = new List<UserViewModel>()
     {
