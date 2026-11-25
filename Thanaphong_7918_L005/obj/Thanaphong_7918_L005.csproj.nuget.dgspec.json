@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\CSI402\\CSI402\\Thanaphong_7918_L005\\Thanaphong_7918_L005.csproj": {}
+    "c:\\CSI402\\CSI402\\Thanaphong_7918_L005\\Thanaphong_7918_L005.csproj": {}
   },
   "projects": {
-    "C:\\CSI402\\CSI402\\Thanaphong_7918_L005\\Thanaphong_7918_L005.csproj": {
+    "c:\\CSI402\\CSI402\\Thanaphong_7918_L005\\Thanaphong_7918_L005.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\CSI402\\CSI402\\Thanaphong_7918_L005\\Thanaphong_7918_L005.csproj",
+        "projectUniqueName": "c:\\CSI402\\CSI402\\Thanaphong_7918_L005\\Thanaphong_7918_L005.csproj",
         "projectName": "Thanaphong_7918_L005",
-        "projectPath": "C:\\CSI402\\CSI402\\Thanaphong_7918_L005\\Thanaphong_7918_L005.csproj",
+        "projectPath": "c:\\CSI402\\CSI402\\Thanaphong_7918_L005\\Thanaphong_7918_L005.csproj",
         "packagesPath": "C:\\Users\\thnph\\.nuget\\packages\\",
-        "outputPath": "C:\\CSI402\\CSI402\\Thanaphong_7918_L005\\obj\\",
+        "outputPath": "c:\\CSI402\\CSI402\\Thanaphong_7918_L005\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\thnph\\AppData\\Roaming\\NuGet\\NuGet.Config"

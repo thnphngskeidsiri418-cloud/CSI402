@@ -1,0 +1,201 @@
+@model IEnumerable<Thanaphong_7918_L005.Models.Refund>
+@using System.Text.Json
+@{
+    ViewData["Title"] = "ตรวจสอบคำร้องขอคืนเงิน - บัญชี";
+    Layout = "~/Views/Shared/_StaffLayout.cshtml";
+
+    var pendingRefunds = Model.Where(r => r.Status == "Pending").ToList();
+    var firstRefund = pendingRefunds.FirstOrDefault() ?? Model.FirstOrDefault();
+}
+
+<div class="w-full max-w-7xl mx-auto">
+    
+    <!-- แถบเมนูสลับโหมดด้านบน (ของเดิมคุณ) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <a href="/Accountant/Index" class="bg-[#161823] hover:bg-[#1f2233] text-gray-300 border border-gray-700 text-center py-3 rounded-full font-bold transition-all">
+            สถานะการชำระเงิน
+        </a>
+        <a href="/Accountant/Refunds" class="bg-[#8B5CF6] text-white text-center py-3 rounded-full font-bold shadow-md transition-all">
+            ตรวจสอบคำร้องขอคืนเงิน (@pendingRefunds.Count)
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="bg-green-500/10 border border-green-500/30 text-green-400 text-sm px-4 py-3 rounded-xl mb-4">
+            @TempData["Success"]
+        </div>
+    }
+
+    <!-- กรอบหลักครอบพื้นที่ทำงาน (ดีไซน์ 2 ฝั่งเดิมของคุณ) -->
+    <div class="bg-[#161823] border border-gray-800 rounded-2xl p-6 shadow-xl">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-260px)]">
+            
+            <!-- ================= ฝั่งซ้าย: รายชื่อลูกค้าที่ส่งคำร้องขอคืนเงินจาก MySQL (7 คอลัมน์) ================= -->
+            <div class="lg:col-span-7 flex flex-col h-full pr-2">
+                <div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-800">
+                    <h2 class="text-lg font-bold text-white">รายชื่อลูกค้าที่ส่งคำร้องขอคืนเงิน</h2>
+                    <span class="text-xs bg-red-500/20 text-red-300 border border-red-500/30 px-3 py-1 rounded-full">
+                        รอพิจารณา @pendingRefunds.Count คำร้อง
+                    </span>
+                </div>
+
+                <!-- รายการคำร้องขอคืนเงิน -->
+                <div class="flex-grow overflow-y-auto space-y-3 pr-1">
+                    @if (!Model.Any())
+                    {
+                        <div class="text-center py-10 text-gray-500 text-sm">
+                            ยังไม่มีคำร้องขอคืนเงินเข้ามาในระบบ
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var r in Model)
+                        {
+                            var isFirst = (firstRefund != null && r.RefundId == firstRefund.RefundId);
+                            var borderClass = isFirst ? "bg-[#1f2233] border-2 border-[#8B5CF6]" : "bg-[#11121A] hover:bg-[#1f2233] border border-gray-800";
+                            var gamePkg = $"{r.Order?.Package?.Game?.GameName} - {r.Order?.Package?.PackageName}";
+                            var amountStr = $"฿{(r.Order?.TotalPrice ?? 0):N2}";
+
+                            <div onclick='selectRefund(this, @r.RefundId, "#REF-@r.RefundId.ToString("D4")", "#ORD-@r.OrderId.ToString("D4")", @Html.Raw(JsonSerializer.Serialize(r.Order?.User?.Username ?? "-")), @Html.Raw(JsonSerializer.Serialize(amountStr)), @Html.Raw(JsonSerializer.Serialize(gamePkg)), @Html.Raw(JsonSerializer.Serialize(r.Reason)), "@r.Status")' 
+                                 class="refund-card p-4 rounded-xl @borderClass cursor-pointer transition-all flex justify-between items-center">
+                                <div>
+                                    <div class="flex items-center gap-3 mb-1">
+                                        <span class="font-bold text-white text-base">#REF-@r.RefundId.ToString("D4")</span>
+                                        <span class="text-sm text-gray-300">@(r.Order?.User?.Username ?? "-")</span>
+                                        <span class="text-xs text-gray-500">(อ้างอิง #ORD-@r.OrderId.ToString("D4"))</span>
+                                    </div>
+                                    <div class="text-xs text-gray-400 truncate max-w-md">@gamePkg • เหตุผล: @r.Reason</div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="font-bold text-red-400 text-lg">@amountStr</div>
+                                    @if (r.Status == "Pending")
+                                    {
+                                        <span class="text-xs text-yellow-400">รอพิจารณา</span>
+                                    }
+                                    else if (r.Status == "Approved")
+                                    {
+                                        <span class="text-xs text-green-400">✔ อนุมัติแล้ว</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-xs text-red-400">✖ ปฏิเสธแล้ว</span>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+
+            <!-- ================= ฝั่งขวา: อนุมัติการคืนเงินหรือไม่ (5 คอลัมน์) ================= -->
+            <div class="lg:col-span-5 bg-[#11121A] border border-gray-700 rounded-2xl p-5 flex flex-col justify-between h-full">
+                
+                <div class="overflow-y-auto pr-1 space-y-4">
+                    <h3 class="text-md font-bold text-white pb-2 border-b border-gray-800 text-center">
+                        พิจารณาอนุมัติการคืนเงิน
+                    </h3>
+
+                    <!-- รายละเอียดคำร้อง -->
+                    <div class="space-y-2 text-sm bg-[#161823] p-4 rounded-xl border border-gray-800">
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">รหัสคำร้อง:</span>
+                            <span id="refId" class="font-bold text-[#8B5CF6]">
+                                @(firstRefund != null ? $"#REF-{firstRefund.RefundId:D4}" : "-")
+                            </span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">ออเดอร์อ้างอิง:</span>
+                            <span id="refOrderId" class="text-gray-300 font-medium">
+                                @(firstRefund != null ? $"#ORD-{firstRefund.OrderId:D4}" : "-")
+                            </span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">ชื่อลูกค้า:</span>
+                            <span id="refCustomer" class="text-white font-medium">@(firstRefund?.Order?.User?.Username ?? "-")</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">รายการที่สั่งซื้อ:</span>
+                            <span id="refPackage" class="text-gray-200 font-medium">
+                                @(firstRefund != null ? $"{firstRefund.Order?.Package?.Game?.GameName} - {firstRefund.Order?.Package?.PackageName}" : "-")
+                            </span>
+                        </div>
+                        <div class="flex justify-between pt-1 border-t border-gray-800">
+                            <span class="text-gray-400">ยอดเงินที่ขอคืน:</span>
+                            <span id="refAmount" class="text-red-400 font-bold text-base">
+                                @(firstRefund != null ? $"฿{(firstRefund.Order?.TotalPrice ?? 0):N2}" : "฿0.00")
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- กล่องแสดงเหตุผลของลูกค้า -->
+                    <div class="bg-[#161823] p-4 rounded-xl border border-gray-800">
+                        <div class="text-xs text-gray-400 mb-1.5 font-semibold">เหตุผลและบัญชีรับเงินคืนที่ลูกค้าแจ้ง:</div>
+                        <p id="refReason" class="text-sm text-gray-200 leading-relaxed">
+                            @(firstRefund?.Reason ?? "ไม่มีข้อมูลคำร้อง")
+                        </p>
+                    </div>
+
+                    <!-- ช่องหมายเหตุจากฝ่ายบัญชี -->
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1.5">หมายเหตุจากเจ้าหน้าที่ (ถ้ามี):</label>
+                        <input type="text" placeholder="ระบุเหตุผลกรณีไม่อนุมัติ หรือแจ้งเวลาโอนคืน..." 
+                               class="w-full bg-[#161823] text-white text-sm border border-gray-700 rounded-xl px-3.5 py-2 focus:outline-none focus:border-[#8B5CF6]" />
+                    </div>
+                </div>
+
+                <!-- ปุ่มอนุมัติ / ไม่อนุมัติ (เชื่อมต่อ Form ส่งเข้า MySQL จริง) -->
+                <div id="refundActionBox" class="pt-4 mt-2 border-t border-gray-800 grid grid-cols-2 gap-3 @(firstRefund == null || firstRefund.Status != "Pending" ? "hidden" : "")">
+                    <form method="post" asp-controller="Accountant" asp-action="ProcessRefund" onsubmit="return confirm('ยืนยันไม่อนุมัติคำร้องขอคืนเงินนี้?');">
+                        <input type="hidden" name="refundId" id="rejectRefundId" value="@(firstRefund?.RefundId ?? 0)" />
+                        <input type="hidden" name="decision" value="Rejected" />
+                        <button type="submit" class="w-full bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white border border-red-500/30 py-2.5 rounded-xl text-sm font-bold transition-all">
+                            ไม่อนุมัติคำร้อง
+                        </button>
+                    </form>
+
+                    <form method="post" asp-controller="Accountant" asp-action="ProcessRefund" onsubmit="return confirm('ยืนยันอนุมัติการคืนเงินสำหรับคำร้องนี้?');">
+                        <input type="hidden" name="refundId" id="approveRefundId" value="@(firstRefund?.RefundId ?? 0)" />
+                        <input type="hidden" name="decision" value="Approved" />
+                        <button type="submit" class="w-full bg-green-600 hover:bg-green-500 text-white py-2.5 rounded-xl text-sm font-bold shadow-md transition-all">
+                            อนุมัติคืนเงินสำเร็จ
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript สำหรับสลับข้อมูลคำร้องขอคืนเงิน -->
+<script>
+    function selectRefund(element, rawId, refId, orderId, customer, amount, pkgInfo, reason, status) {
+        // เปลี่ยนขอบสีม่วงให้การ์ดที่ถูกเลือก
+        document.querySelectorAll('.refund-card').forEach(card => {
+            card.classList.remove('bg-[#1f2233]', 'border-2', 'border-[#8B5CF6]');
+            card.classList.add('bg-[#11121A]', 'border', 'border-gray-800');
+        });
+        element.classList.remove('bg-[#11121A]', 'border', 'border-gray-800');
+        element.classList.add('bg-[#1f2233]', 'border-2', 'border-[#8B5CF6]');
+
+        // อัปเดตข้อมูลฝั่งขวา
+        document.getElementById('refId').textContent = refId;
+        document.getElementById('refOrderId').textContent = orderId;
+        document.getElementById('refCustomer').textContent = customer;
+        document.getElementById('refAmount').textContent = amount;
+        document.getElementById('refPackage').textContent = pkgInfo;
+        document.getElementById('refReason').textContent = reason;
+
+        document.getElementById('rejectRefundId').value = rawId;
+        document.getElementById('approveRefundId').value = rawId;
+
+        const actionBox = document.getElementById('refundActionBox');
+        if (status === 'Pending') {
+            actionBox.classList.remove('hidden');
+        } else {
+            actionBox.classList.add('hidden');
+        }
+    }
+</script>

@@ -1,0 +1,176 @@
+@model IEnumerable<Thanaphong_7918_L005.Models.Order>
+@{
+    ViewData["Title"] = "ฝ่ายบัญชี - ตรวจสอบการชำระเงิน";
+    Layout = "~/Views/Shared/_StaffLayout.cshtml";
+
+    var pendingOrders = Model.Where(o => o.Status == "PendingPayment").ToList();
+    var totalVerifiedAmount = Model.Where(o => o.Status == "Paid" || o.Status == "Completed").Sum(o => o.TotalPrice);
+}
+
+<div class="w-full max-w-7xl mx-auto space-y-6">
+
+    <!-- แถบเมนูด้านบน -->
+    <div class="grid grid-cols-2 gap-4 max-w-md">
+        <a href="/Accountant/Index" class="bg-[#8B5CF6] text-white text-center py-3 rounded-full font-bold shadow-md transition-all">
+            ตรวจสอบสลิป (@pendingOrders.Count)
+        </a>
+        <a href="/Accountant/Refunds" class="bg-[#161823] hover:bg-[#1f2233] text-gray-300 border border-gray-700 text-center py-3 rounded-full font-bold transition-all">
+            คำร้องขอคืนเงิน
+        </a>
+    </div>
+
+    <!-- การ์ดสรุปยอดบัญชี -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-[#161823] border border-yellow-500/30 rounded-2xl p-5">
+            <div class="text-xs text-gray-400">สลิปรอตรวจสอบ</div>
+            <div class="text-2xl font-extrabold text-yellow-400 mt-1">@pendingOrders.Count รายการ</div>
+        </div>
+        <div class="bg-[#161823] border border-green-500/30 rounded-2xl p-5">
+            <div class="text-xs text-gray-400">ยอดเงินอนุมัติแล้วทั้งหมด</div>
+            <div class="text-2xl font-extrabold text-green-400 mt-1">฿@totalVerifiedAmount.ToString("N2")</div>
+        </div>
+        <div class="bg-[#161823] border border-gray-800 rounded-2xl p-5">
+            <div class="text-xs text-gray-400">ออเดอร์ทั้งหมดในระบบ</div>
+            <div class="text-2xl font-extrabold text-white mt-1">@Model.Count() รายการ</div>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="bg-green-500/10 border border-green-500/30 text-green-400 text-sm px-4 py-3 rounded-xl">
+            @TempData["Success"]
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-xl">
+            @TempData["Error"]
+        </div>
+    }
+
+    <!-- ตารางรายการตรวจสอบสลิป -->
+    <div class="bg-[#161823] border border-gray-800 rounded-2xl overflow-hidden shadow-xl">
+        <div class="p-5 border-b border-gray-800 flex justify-between items-center">
+            <h2 class="text-lg font-bold text-white">รายการแจ้งโอนเงินจากลูกค้า</h2>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-[#11121A] text-gray-400 text-xs uppercase border-b border-gray-800">
+                        <th class="py-3.5 px-5">ออเดอร์</th>
+                        <th class="py-3.5 px-5">ลูกค้า</th>
+                        <th class="py-3.5 px-5">รายการสินค้า</th>
+                        <th class="py-3.5 px-5">ยอดโอน</th>
+                        <th class="py-3.5 px-5">หลักฐานสลิป</th>
+                        <th class="py-3.5 px-5">สถานะ</th>
+                        <th class="py-3.5 px-5 text-right">การดำเนินการ</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-800 text-sm">
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="7" class="py-10 text-center text-gray-500">ยังไม่มีรายการแจ้งโอนเงินเข้ามาในระบบ</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var order in Model)
+                        {
+                            <tr class="hover:bg-[#1f2233]/50 transition-colors">
+                                <td class="py-4 px-5">
+                                    <div class="font-bold text-[#8B5CF6]">#ORD-@order.OrderId.ToString("D4")</div>
+                                    <div class="text-xs text-gray-500">@order.CreatedAt.ToString("dd/MM HH:mm")</div>
+                                </td>
+                                <td class="py-4 px-5 text-white font-medium">@order.User?.Username</td>
+                                <td class="py-4 px-5">
+                                    <div class="text-white font-semibold">@order.Package?.Game?.GameName</div>
+                                    <div class="text-xs text-gray-400">@order.Package?.PackageName</div>
+                                </td>
+                                <td class="py-4 px-5 font-extrabold text-green-400">฿@order.TotalPrice.ToString("N2")</td>
+                                <td class="py-4 px-5">
+                                    @if (!string.IsNullOrEmpty(order.SlipImage))
+                                    {
+                                        <button type="button" onclick="openSlipModal('@order.SlipImage', '#ORD-@order.OrderId.ToString("D4")', '@order.TotalPrice.ToString("N2")')"
+                                                class="inline-flex items-center gap-2 bg-[#11121A] hover:bg-gray-800 border border-gray-700 px-3 py-1.5 rounded-lg text-xs text-purple-300 font-medium transition-colors">
+                                            🔍 ดูรูปสลิป
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-xs text-gray-500">ไม่มีรูปสลิป</span>
+                                    }
+                                </td>
+                                <td class="py-4 px-5">
+                                    @if (order.Status == "PendingPayment")
+                                    {
+                                        <span class="px-3 py-1 text-xs rounded-full bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">รอตรวจสลิป</span>
+                                    }
+                                    else if (order.Status == "Paid")
+                                    {
+                                        <span class="px-3 py-1 text-xs rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">อนุมัติแล้ว (รอเติม)</span>
+                                    }
+                                    else if (order.Status == "Completed")
+                                    {
+                                        <span class="px-3 py-1 text-xs rounded-full bg-green-500/10 text-green-400 border border-green-500/20">เติมสำเร็จ</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="px-3 py-1 text-xs rounded-full bg-red-500/10 text-red-400 border border-red-500/20">ปฏิเสธแล้ว</span>
+                                    }
+                                </td>
+                                <td class="py-4 px-5 text-right space-x-2">
+                                    @if (order.Status == "PendingPayment")
+                                    {
+                                        <form method="post" asp-controller="Accountant" asp-action="ApprovePayment" class="inline">
+                                            <input type="hidden" name="orderId" value="@order.OrderId" />
+                                            <button type="submit" class="bg-green-600 hover:bg-green-500 text-white text-xs font-bold px-3.5 py-2 rounded-lg shadow transition-colors">
+                                                ✔ อนุมัติ
+                                            </button>
+                                        </form>
+                                        <form method="post" asp-controller="Accountant" asp-action="RejectPayment" onsubmit="return confirm('ยืนยันปฏิเสธสลิปออเดอร์นี้?');" class="inline">
+                                            <input type="hidden" name="orderId" value="@order.OrderId" />
+                                            <button type="submit" class="bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white border border-red-500/30 text-xs font-bold px-3 py-2 rounded-lg transition-colors">
+                                                ✖ ปฏิเสธ
+                                            </button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-xs text-gray-500">ดำเนินการแล้ว</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal แสดงรูปสลิปขนาดใหญ่ -->
+<div id="slipModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-[#161823] border border-gray-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+        <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+            <h3 class="text-base font-bold text-white">หลักฐานสลิป <span id="slipOrderTitle" class="text-[#8B5CF6]"></span></h3>
+            <button type="button" onclick="document.getElementById('slipModal').classList.add('hidden')" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+        </div>
+        <div class="text-center text-sm text-gray-300">
+            ยอดที่ต้องโอน: <span id="slipAmountTitle" class="font-bold text-green-400 text-lg"></span> บาท
+        </div>
+        <div class="bg-black rounded-xl overflow-hidden flex items-center justify-center max-h-[60vh]">
+            <img id="slipPreviewImg" src="" alt="Slip" class="max-h-[60vh] object-contain" />
+        </div>
+    </div>
+</div>
+
+<script>
+    function openSlipModal(imgUrl, orderCode, amount) {
+        document.getElementById('slipPreviewImg').src = imgUrl;
+        document.getElementById('slipOrderTitle').textContent = orderCode;
+        document.getElementById('slipAmountTitle').textContent = '฿' + amount;
+        document.getElementById('slipModal').classList.remove('hidden');
+    }
+</script>

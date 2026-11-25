@@ -1,0 +1,247 @@
+@model IEnumerable<Thanaphong_7918_L005.Models.User>
+@using System.Security.Claims
+@{
+    ViewData["Title"] = "จัดการสิทธิ์ Staff - แอดมิน";
+    Layout = "~/Views/Shared/_StaffLayout.cshtml";
+    var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+}
+
+<div class="w-full max-w-7xl mx-auto space-y-6">
+    
+    <!-- ================= แถบเมนู 4 ปุ่มด้านบน ================= -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <a href="/Admin/Index" class="bg-[#161823] hover:bg-[#1f2233] text-gray-300 border border-gray-700 text-center py-3 rounded-full font-bold transition-all">
+            ภาพรวม/สต็อก
+        </a>
+        <a href="/Admin/ManageGames" class="bg-[#161823] hover:bg-[#1f2233] text-gray-300 border border-gray-700 text-center py-3 rounded-full font-bold transition-all">
+            จัดการเกม
+        </a>
+        <a href="/Admin/Promotions" class="bg-[#161823] hover:bg-[#1f2233] text-gray-300 border border-gray-700 text-center py-3 rounded-full font-bold transition-all">
+            จัดการโปรโมชั่น
+        </a>
+        <a href="/Admin/Permissions" class="bg-[#8B5CF6] text-white text-center py-3 rounded-full font-bold shadow-md transition-all">
+            จัดการสิทธิ์
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="bg-green-500/10 border border-green-500/30 text-green-400 text-sm px-4 py-3 rounded-xl">
+            @TempData["Success"]
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-xl">
+            @TempData["Error"]
+        </div>
+    }
+
+    <!-- ================= กล่องตารางจัดการสิทธิ์ทีมงาน ================= -->
+    <div class="bg-[#161823] border border-gray-800 rounded-2xl p-6 shadow-lg">
+        
+        <!-- ส่วนหัว + ช่องค้นหา + ปุ่มเพิ่มบัญชีพนักงาน -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-4 border-b border-gray-800">
+            <div>
+                <h2 class="text-lg font-bold text-white">จัดการสิทธิ์ staff (@(Model?.Count() ?? 0) บัญชี)</h2>
+                <p class="text-xs text-gray-400 mt-0.5">กำหนดบทบาทหน้าที่ (Role) และควบคุมสิทธิ์การเข้าถึงระบบของพนักงาน (แสดงเฉพาะ Admin, Staff, Accountant)</p>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-3">
+                <input type="text" id="staffSearchInput" onkeyup="filterStaffRows()" placeholder="ค้นหาชื่อหรืออีเมล..." 
+                       class="bg-[#11121A] text-white text-sm border border-gray-700 rounded-xl px-4 py-2.5 focus:outline-none focus:border-[#8B5CF6] w-full sm:w-64" />
+                
+                <button type="button" onclick="openAddStaffModal()" 
+                        class="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white text-sm font-bold px-5 py-2.5 rounded-xl shadow-md transition-all whitespace-nowrap">
+                    + เพิ่มบัญชีพนักงาน
+                </button>
+            </div>
+        </div>
+
+        <!-- ตารางแสดงข้อมูลจริงจาก MySQL -->
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-sm">
+                <thead>
+                    <tr class="border-b border-gray-800 text-xs text-gray-400">
+                        <th class="pb-3.5 font-medium">รหัส / พนักงาน</th>
+                        <th class="pb-3.5 font-medium">อีเมลเข้าสู่ระบบ</th>
+                        <th class="pb-3.5 font-medium">ตำแหน่ง / บทบาท (ROLE)</th>
+                        <th class="pb-3.5 font-medium text-center">สิทธิ์เข้าใช้งาน</th>
+                        <th class="pb-3.5 font-medium text-right">จัดการ</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-800/80">
+                    @if (Model == null || !Model.Any())
+                    {
+                        <tr>
+                            <td colspan="5" class="py-10 text-center text-gray-500">
+                                ยังไม่มีบัญชีพนักงานในระบบ
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var staff in Model)
+                        {
+                            bool isSelf = (currentUserId == staff.UserId.ToString());
+                            string avatarBg = staff.Role == "Admin" ? "bg-purple-500/20 text-purple-300 border-purple-500/30"
+                                            : (staff.Role == "Staff" ? "bg-blue-500/20 text-blue-300 border-blue-500/30"
+                                            : "bg-emerald-500/20 text-emerald-300 border-emerald-500/30");
+
+                            string selectTextColor = staff.Role == "Admin" ? "text-purple-400"
+                                                   : (staff.Role == "Staff" ? "text-blue-400"
+                                                   : "text-emerald-400");
+
+                            <tr class="staff-row hover:bg-[#11121A]/60 transition-colors"
+                                data-search="@($"{staff.Username} {staff.Email} {staff.Role}".ToLower())">
+                                
+                                <!-- คอลัมน์ 1: รหัส / ชื่อพนักงาน -->
+                                <td class="py-4">
+                                    <div class="flex items-center gap-3.5">
+                                        <div class="w-10 h-10 rounded-full @avatarBg border flex items-center justify-center font-bold uppercase shrink-0">
+                                            @(staff.Username?.Substring(0, 1) ?? "S")
+                                        </div>
+                                        <div>
+                                            <div class="font-bold text-white flex items-center gap-2">
+                                                <span>@staff.Username</span>
+                                                @if (isSelf)
+                                                {
+                                                    <span class="text-[10px] bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full">คุณ</span>
+                                                }
+                                            </div>
+                                            <div class="text-xs text-gray-500">ID: STF-@staff.UserId.ToString("D3")</div>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <!-- คอลัมน์ 2: อีเมลเข้าสู่ระบบ -->
+                                <td class="py-4 text-gray-300">@staff.Email</td>
+
+                                <!-- คอลัมน์ 3: เลือกตำแหน่ง Role -->
+                                <td class="py-4">
+                                    <form id="roleForm-@staff.UserId" method="post" asp-controller="Admin" asp-action="UpdateUserRole">
+                                        <input type="hidden" name="userId" value="@staff.UserId" />
+                                        <select name="newRole" class="bg-[#11121A] @selectTextColor font-semibold text-xs border border-gray-700 rounded-xl px-3.5 py-2 focus:outline-none focus:border-[#8B5CF6]">
+                                            @if (staff.Role == "Admin")
+                                            {
+                                                <option value="Admin" selected>Admin (ผู้ดูแลระบบสูงสุด)</option>
+                                                <option value="Staff">Staff (พนักงานเติมเกม)</option>
+                                                <option value="Accountant">Accountant (ฝ่ายบัญชี)</option>
+                                            }
+                                            else if (staff.Role == "Staff")
+                                            {
+                                                <option value="Admin">Admin (ผู้ดูแลระบบสูงสุด)</option>
+                                                <option value="Staff" selected>Staff (พนักงานเติมเกม)</option>
+                                                <option value="Accountant">Accountant (ฝ่ายบัญชี)</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="Admin">Admin (ผู้ดูแลระบบสูงสุด)</option>
+                                                <option value="Staff">Staff (พนักงานเติมเกม)</option>
+                                                <option value="Accountant" selected>Accountant (ฝ่ายบัญชี)</option>
+                                            }
+                                        </select>
+                                    </form>
+                                </td>
+
+                                <!-- คอลัมน์ 4: สถานะสิทธิ์เข้าใช้งาน -->
+                                <td class="py-4 text-center">
+                                    <span class="inline-flex items-center gap-1.5 text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full font-medium">
+                                        <span class="w-2 h-2 rounded-full bg-emerald-400"></span> เปิดใช้งาน
+                                    </span>
+                                </td>
+
+                                <!-- คอลัมน์ 5: ปุ่มบันทึก / ลบ -->
+                                <td class="py-4 text-right">
+                                    <div class="inline-flex items-center gap-2">
+                                        <button type="submit" form="roleForm-@staff.UserId"
+                                                class="bg-[#8B5CF6]/20 hover:bg-[#8B5CF6] text-purple-300 hover:text-white border border-[#8B5CF6]/40 text-xs font-bold px-3.5 py-1.5 rounded-lg transition-all">
+                                            บันทึก
+                                        </button>
+
+                                        @if (!isSelf)
+                                        {
+                                            <form method="post" asp-controller="Admin" asp-action="DeleteStaffAccount" onsubmit="return confirm('ยืนยันการลบบัญชีพนักงาน @staff.Username ออกจากระบบ?');" class="inline">
+                                                <input type="hidden" name="userId" value="@staff.UserId" />
+                                                <button type="submit" class="text-xs text-gray-500 hover:text-red-400 px-2 py-1.5 transition-colors">
+                                                    ลบ
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+
+<!-- ================= Modal: เพิ่มบัญชีพนักงานใหม่ ================= -->
+<div id="addStaffModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-[#161823] border border-gray-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-5">
+        <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+            <h3 class="text-lg font-bold text-white">+ เพิ่มบัญชีพนักงานใหม่</h3>
+            <button type="button" onclick="closeAddStaffModal()" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+        </div>
+
+        <form method="post" asp-controller="Admin" asp-action="CreateStaffAccount" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-1.5">ชื่อพนักงาน (Username) *</label>
+                <input type="text" name="username" required placeholder="เช่น กิตติพงษ์ ใจสู้"
+                       class="w-full bg-[#11121A] text-white text-sm border border-gray-700 rounded-xl px-4 py-2.5 focus:outline-none focus:border-[#8B5CF6]" />
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-1.5">อีเมลเข้าสู่ระบบ *</label>
+                <input type="email" name="email" required placeholder="staff02@topupgame.com"
+                       class="w-full bg-[#11121A] text-white text-sm border border-gray-700 rounded-xl px-4 py-2.5 focus:outline-none focus:border-[#8B5CF6]" />
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-1.5">รหัสผ่านเริ่มต้น *</label>
+                <input type="password" name="password" required minlength="4" placeholder="ตั้งรหัสผ่านสำหรับเข้าสู่ระบบ"
+                       class="w-full bg-[#11121A] text-white text-sm border border-gray-700 rounded-xl px-4 py-2.5 focus:outline-none focus:border-[#8B5CF6]" />
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-1.5">ตำแหน่ง / บทบาท (Role) *</label>
+                <select name="role" class="w-full bg-[#11121A] text-white text-sm border border-gray-700 rounded-xl px-4 py-2.5 focus:outline-none focus:border-[#8B5CF6]">
+                    <option value="Staff">Staff (พนักงานเติมเกม)</option>
+                    <option value="Accountant">Accountant (ฝ่ายบัญชี)</option>
+                    <option value="Admin">Admin (ผู้ดูแลระบบสูงสุด)</option>
+                </select>
+            </div>
+
+            <div class="pt-2 flex justify-end gap-3">
+                <button type="button" onclick="closeAddStaffModal()" class="px-4 py-2.5 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">
+                    ยกเลิก
+                </button>
+                <button type="submit" class="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-bold px-6 py-2.5 rounded-xl text-sm shadow-md transition-all">
+                    สร้างบัญชีพนักงาน
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openAddStaffModal() {
+        document.getElementById('addStaffModal').classList.remove('hidden');
+    }
+
+    function closeAddStaffModal() {
+        document.getElementById('addStaffModal').classList.add('hidden');
+    }
+
+    function filterStaffRows() {
+        const keyword = document.getElementById('staffSearchInput').value.toLowerCase();
+        document.querySelectorAll('.staff-row').forEach(row => {
+            const text = row.getAttribute('data-search');
+            row.style.display = text.includes(keyword) ? '' : 'none';
+        });
+    }
+</script>

@@ -1,0 +1,158 @@
+@model IEnumerable<Thanaphong_7918_L005.Models.Message>
+@using Thanaphong_7918_L005.Models
+@{
+    ViewData["Title"] = "แชทช่วยเหลือลูกค้า - พนักงาน";
+    Layout = "~/Views/Shared/_StaffLayout.cshtml";
+
+    var customers = ViewBag.Customers as List<User> ?? new List<User>();
+    var selectedCustomer = ViewBag.SelectedCustomer as User;
+}
+
+<div class="w-full max-w-7xl mx-auto space-y-6">
+    
+    <!-- แถบเมนูสลับโหมด 3 ปุ่มด้านบน -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <a href="/Staff/Index" class="bg-[#161823] hover:bg-[#1f2233] text-gray-300 border border-gray-700 text-center py-3 rounded-full font-bold transition-all">
+            คิวเติมเกม
+        </a>
+        <a href="/Staff/ManageGames" class="bg-[#161823] hover:bg-[#1f2233] text-gray-300 border border-gray-700 text-center py-3 rounded-full font-bold transition-all">
+            จัดการเกม
+        </a>
+        <a href="/Staff/SupportChat" class="bg-[#8B5CF6] text-white text-center py-3 rounded-full font-bold shadow-md transition-all">
+            แชทช่วยเหลือลูกค้า (@customers.Count)
+        </a>
+    </div>
+
+    <!-- พื้นที่แชท แบ่ง 2 ฝั่ง (ซ้าย: รายชื่อลูกค้า | ขวา: ห้องสนทนา) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-230px)]">
+        
+        <!-- ================= ฝั่งซ้าย: รายชื่อลูกค้าที่ทักเข้ามา (4 คอลัมน์) ================= -->
+        <div class="lg:col-span-4 bg-[#161823] border border-gray-800 rounded-2xl p-5 flex flex-col h-full shadow-lg">
+            <div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-800">
+                <h2 class="text-lg font-bold text-white">รายชื่อลูกค้าที่ติดต่อเข้ามา</h2>
+                <span class="text-xs bg-purple-500/20 text-[#8B5CF6] px-2.5 py-1 rounded-full font-semibold">
+                    @customers.Count คน
+                </span>
+            </div>
+
+            <div class="flex-grow overflow-y-auto space-y-2.5 pr-1">
+                @if (!customers.Any())
+                {
+                    <div class="text-center py-10 text-gray-500 text-sm">
+                        ยังไม่มีข้อความจากลูกค้าเข้ามาในระบบ
+                    </div>
+                }
+                else
+                {
+                    @foreach (var cust in customers)
+                    {
+                        var isSelected = (selectedCustomer != null && cust.UserId == selectedCustomer.UserId);
+                        var activeStyle = isSelected
+                            ? "bg-[#1f2233] border-2 border-[#8B5CF6]"
+                            : "bg-[#11121A] hover:bg-[#1f2233] border border-gray-800";
+
+                        <a href="/Staff/SupportChat?customerId=@cust.UserId"
+                           class="block p-3.5 rounded-xl @activeStyle transition-all">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-[#8B5CF6] to-indigo-500 flex items-center justify-center font-bold text-white uppercase shrink-0">
+                                    @(cust.Username?.Substring(0, 1) ?? "U")
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <div class="font-bold text-white text-sm truncate">@cust.Username</div>
+                                    <div class="text-xs text-gray-400 truncate">@cust.Email</div>
+                                </div>
+                                @if (isSelected)
+                                {
+                                    <span class="w-2.5 h-2.5 rounded-full bg-green-400 shrink-0"></span>
+                                }
+                            </div>
+                        </a>
+                    }
+                }
+            </div>
+        </div>
+
+        <!-- ================= ฝั่งขวา: หน้าต่างสนทนาและตอบกลับลูกค้า (8 คอลัมน์) ================= -->
+        <div class="lg:col-span-8 bg-[#161823] border border-gray-800 rounded-2xl flex flex-col h-full overflow-hidden shadow-lg">
+            
+            @if (selectedCustomer == null)
+            {
+                <div class="flex-grow flex items-center justify-center text-gray-500 text-sm">
+                    เลือกรายชื่อลูกค้าทางฝั่งซ้ายเพื่อเริ่มตอบแชท
+                </div>
+            }
+            else
+            {
+                <!-- หัวข้อห้องแชท -->
+                <div class="px-6 py-4 bg-[#11121A] border-b border-gray-800 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-full bg-[#8B5CF6] flex items-center justify-center font-bold text-white uppercase">
+                            @(selectedCustomer.Username?.Substring(0, 1) ?? "U")
+                        </div>
+                        <div>
+                            <div class="font-bold text-white text-sm">@selectedCustomer.Username</div>
+                            <div class="text-xs text-gray-400">รหัสสมาชิก: #USR-@selectedCustomer.UserId.ToString("D4")</div>
+                        </div>
+                    </div>
+                    <a href="/Staff/SupportChat?customerId=@selectedCustomer.UserId" class="text-xs text-gray-400 hover:text-white border border-gray-700 px-3 py-1.5 rounded-lg">
+                        รีเฟรชข้อความ
+                    </a>
+                </div>
+
+                <!-- กล่องแสดงประวัติข้อความ -->
+                <div id="staffChatBox" class="flex-grow p-6 overflow-y-auto space-y-4">
+                    @if (!Model.Any())
+                    {
+                        <div class="text-center text-gray-500 text-sm py-10">ยังไม่มีประวัติการสนทนา</div>
+                    }
+                    else
+                    {
+                        @foreach (var msg in Model)
+                        {
+                            // ถ้า ReceiverId == null แปลว่าลูกค้าส่งเข้ามา (ชิดซ้าย)
+                            // ถ้า ReceiverId != null แปลว่าทีมงานตอบกลับลูกค้า (ชิดขวา สีม่วง)
+                            bool isFromCustomer = (msg.ReceiverId == null);
+
+                            if (isFromCustomer)
+                            {
+                                <div class="flex justify-start">
+                                    <div class="bg-[#11121A] border border-gray-700 text-gray-200 px-4 py-2.5 rounded-2xl rounded-tl-none max-w-md text-sm shadow">
+                                        <div class="text-[11px] text-[#8B5CF6] font-semibold mb-0.5">@selectedCustomer.Username</div>
+                                        <p>@msg.MessageText</p>
+                                        <div class="text-[10px] text-gray-500 mt-1">@msg.SentAt.ToString("HH:mm")</div>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="flex justify-end">
+                                    <div class="bg-[#8B5CF6] text-white px-4 py-2.5 rounded-2xl rounded-tr-none max-w-md text-sm shadow">
+                                        <div class="text-[11px] text-purple-200 font-semibold mb-0.5 text-right">ทีมงาน (@(msg.Sender?.Username ?? "Staff"))</div>
+                                        <p>@msg.MessageText</p>
+                                        <div class="text-[10px] text-purple-200 mt-1 text-right">@msg.SentAt.ToString("HH:mm")</div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    }
+                </div>
+
+                <!-- ช่องพิมพ์ข้อความตอบกลับ -->
+                <form method="post" asp-controller="Staff" asp-action="ReplyMessage" class="p-4 bg-[#11121A] border-t border-gray-800 flex gap-3">
+                    <input type="hidden" name="customerId" value="@selectedCustomer.UserId" />
+                    <input type="text" name="messageText" required placeholder="พิมพ์ข้อความตอบกลับคุณ @selectedCustomer.Username ..." autocomplete="off"
+                           class="flex-1 bg-[#161823] text-white text-sm border border-gray-700 rounded-full px-5 py-3 focus:outline-none focus:border-[#8B5CF6]" />
+                    <button type="submit" class="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-bold px-6 py-3 rounded-full text-sm transition-colors shadow">
+                        ส่งตอบกลับ
+                    </button>
+                </form>
+            }
+
+        </div>
+    </div>
+</div>
+
+<script>
+    const chatBox = document.getElementById('staffChatBox');
+    if (chatBox) { chatBox.scrollTop = chatBox.scrollHeight; }
+</script>

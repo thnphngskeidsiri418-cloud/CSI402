@@ -1,0 +1,245 @@
+@model IEnumerable<Thanaphong_7918_L005.Models.Promotion>
+@using System.Text.Json
+@{
+    ViewData["Title"] = "จัดการโปรโมชั่น - แอดมิน";
+    Layout = "~/Views/Shared/_StaffLayout.cshtml";
+    var firstPromo = Model?.FirstOrDefault();
+}
+
+<div class="w-full max-w-7xl mx-auto space-y-6">
+    
+    <!-- ================= แถบเมนู 4 ปุ่มด้านบน ================= -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <a href="/Admin/Index" class="bg-[#161823] hover:bg-[#1f2233] text-gray-300 border border-gray-700 text-center py-3 rounded-full font-bold transition-all">
+            ภาพรวม/สต็อก
+        </a>
+        <a href="/Admin/ManageGames" class="bg-[#161823] hover:bg-[#1f2233] text-gray-300 border border-gray-700 text-center py-3 rounded-full font-bold transition-all">
+            จัดการเกม
+        </a>
+        <a href="/Admin/Promotions" class="bg-[#8B5CF6] text-white text-center py-3 rounded-full font-bold shadow-md transition-all">
+            จัดการโปรโมชั่น
+        </a>
+        <a href="/Admin/Permissions" class="bg-[#161823] hover:bg-[#1f2233] text-gray-300 border border-gray-700 text-center py-3 rounded-full font-bold transition-all">
+            จัดการสิทธิ์
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="bg-green-500/10 border border-green-500/30 text-green-400 text-sm px-4 py-3 rounded-xl">
+            @TempData["Success"]
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-xl">
+            @TempData["Error"]
+        </div>
+    }
+
+    <!-- ================= พื้นที่ทำงานหลัก แบ่ง 2 ฝั่ง ================= -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- ================= ฝั่งซ้าย: รายการโปรโมชั่นในระบบ (5 คอลัมน์) ================= -->
+        <div class="lg:col-span-5 bg-[#161823] border border-gray-800 rounded-2xl p-5 flex flex-col h-[calc(100vh-230px)] shadow-lg">
+            
+            <div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-800">
+                <h2 class="text-lg font-bold text-white">รายการโปรโมชั่น (@(Model?.Count() ?? 0))</h2>
+                <button type="button" onclick="resetPromoForm()" class="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white text-xs px-3 py-2 rounded-lg font-semibold transition-colors">
+                    + สร้างโปรโมชั่นใหม่
+                </button>
+            </div>
+
+            <div class="mb-4">
+                <input type="text" id="promoSearchInput" onkeyup="filterPromos()" placeholder="ค้นหารหัสโค้ดหรือชื่อโปรโมชั่น..." 
+                       class="w-full bg-[#11121A] text-white text-sm border border-gray-700 rounded-xl px-4 py-2.5 focus:outline-none focus:border-[#8B5CF6]" />
+            </div>
+
+            <div class="flex-grow overflow-y-auto space-y-3 pr-1">
+                @if (Model == null || !Model.Any())
+                {
+                    <div class="text-center py-10 text-gray-500 text-sm">
+                        ยังไม่มีโปรโมชั่นในฐานข้อมูล MySQL
+                    </div>
+                }
+                else
+                {
+                    @foreach (var p in Model)
+                    {
+                        var isFirst = (firstPromo != null && p.PromoId == firstPromo.PromoId);
+                        var cardStyle = isFirst ? "bg-[#1f2233] border-2 border-[#8B5CF6]" : "bg-[#11121A] hover:bg-[#1f2233] border border-gray-800 hover:border-[#8B5CF6]";
+
+                        <div onclick='selectPromoToEdit(this, @p.PromoId, @Html.Raw(JsonSerializer.Serialize(p.PromoCode)), @Html.Raw(JsonSerializer.Serialize(p.Title)), @p.DiscountAmount, @(p.IsActive == true ? "true" : "false"), @Html.Raw(JsonSerializer.Serialize(p.BannerImage ?? "")))'
+                             data-search="@($"{p.PromoCode} {p.Title}".ToLower())"
+                             class="promo-card p-3.5 rounded-xl @cardStyle cursor-pointer transition-all space-y-2.5">
+                            
+                            @if (!string.IsNullOrEmpty(p.BannerImage))
+                            {
+                                <img src="@p.BannerImage" alt="@p.Title"
+                                     onerror="this.style.display='none'"
+                                     class="w-full h-24 rounded-lg object-cover bg-gray-800" />
+                            }
+
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="min-w-0">
+                                    <div class="flex items-center gap-2">
+                                        <span class="bg-[#8B5CF6]/20 text-[#8B5CF6] border border-[#8B5CF6]/40 text-xs font-extrabold px-2.5 py-0.5 rounded-md">
+                                            @p.PromoCode
+                                        </span>
+                                        <span class="text-xs font-bold text-green-400">ลด ฿@p.DiscountAmount.ToString("N2")</span>
+                                    </div>
+                                    <div class="font-bold text-white text-sm mt-1 truncate">@p.Title</div>
+                                </div>
+
+                                @if (p.IsActive == true)
+                                {
+                                    <span class="text-xs bg-green-500/10 text-green-400 border border-green-500/20 px-2.5 py-1 rounded-full shrink-0">
+                                        เปิดใช้งาน
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="text-xs bg-red-500/10 text-red-400 border border-red-500/20 px-2.5 py-1 rounded-full shrink-0">
+                                        ปิดใช้งาน
+                                    </span>
+                                }
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+        <!-- ================= ฝั่งขวา: ฟอร์มสร้าง / แก้ไขโปรโมชั่น (7 คอลัมน์) ================= -->
+        <div class="lg:col-span-7 bg-[#161823] border border-gray-800 rounded-2xl p-6 flex flex-col h-[calc(100vh-230px)] overflow-y-auto shadow-lg">
+            
+            <div class="flex justify-between items-center mb-5 pb-3 border-b border-gray-800">
+                <h2 id="promoFormTitle" class="text-lg font-bold text-white">
+                    @(firstPromo != null ? $"แก้ไขโปรโมชั่น: {firstPromo.PromoCode}" : "สร้างโปรโมชั่นใหม่")
+                </h2>
+
+                <form id="deletePromoForm" method="post" asp-controller="Admin" asp-action="DeletePromotion"
+                      onsubmit="return confirm('ยืนยันการลบโปรโมชั่นนี้?');"
+                      class="@(firstPromo == null ? "hidden" : "")">
+                    <input type="hidden" name="promoId" id="deletePromoId" value="@(firstPromo?.PromoId ?? 0)" />
+                    <button type="submit" class="text-xs bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white border border-red-500/30 px-3 py-1.5 rounded-lg transition-colors">
+                        ลบโปรโมชั่นนี้
+                    </button>
+                </form>
+            </div>
+
+            <form method="post" asp-controller="Admin" asp-action="SavePromotion" enctype="multipart/form-data" class="space-y-4 flex-grow flex flex-col">
+                <input type="hidden" name="promoId" id="promoIdInput" value="@(firstPromo?.PromoId ?? 0)" />
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1.5">รหัสโค้ดส่วนลด (Promo Code) *</label>
+                        <input type="text" name="promoCode" id="promoCodeInput" value="@(firstPromo?.PromoCode ?? "")" required placeholder="เช่น WELCOME30, PAYDAY50"
+                               class="w-full bg-[#11121A] text-white text-sm uppercase border border-gray-700 rounded-xl px-4 py-2.5 focus:outline-none focus:border-[#8B5CF6]" />
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1.5">มูลค่าส่วนลด (บาท) *</label>
+                        <input type="number" step="0.01" name="discountAmount" id="discountAmountInput" value="@(firstPromo?.DiscountAmount ?? 0)" required placeholder="เช่น 30"
+                               class="w-full bg-[#11121A] text-white text-sm border border-gray-700 rounded-xl px-4 py-2.5 focus:outline-none focus:border-[#8B5CF6]" />
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1.5">ชื่อโปรโมชั่น / รายละเอียด *</label>
+                    <input type="text" name="title" id="promoTitleInput" value="@(firstPromo?.Title ?? "")" required placeholder="เช่น ส่วนลดต้อนรับสมาชิกใหม่ 30 บาท"
+                           class="w-full bg-[#11121A] text-white text-sm border border-gray-700 rounded-xl px-4 py-2.5 focus:outline-none focus:border-[#8B5CF6]" />
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1.5">สถานะโปรโมชั่น</label>
+                        <select name="isActive" id="promoStatusInput" class="w-full bg-[#11121A] text-white text-sm border border-gray-700 rounded-xl px-4 py-2.5 focus:outline-none focus:border-[#8B5CF6]">
+                            @if (firstPromo == null || firstPromo.IsActive == true)
+                            {
+                                <option value="true" selected>เปิดใช้งาน (แสดงแบนเนอร์ & ใช้โค้ดได้)</option>
+                                <option value="false">ปิดใช้งานชั่วคราว</option>
+                            }
+                            else
+                            {
+                                <option value="true">เปิดใช้งาน (แสดงแบนเนอร์ & ใช้โค้ดได้)</option>
+                                <option value="false" selected>ปิดใช้งานชั่วคราว</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1.5">รูปแบนเนอร์หน้าแรก (ถ้ามี)</label>
+                        <input type="file" name="bannerFile" accept="image/*"
+                               class="w-full bg-[#11121A] text-gray-400 text-xs border border-gray-700 rounded-xl px-3 py-2 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#8B5CF6] file:text-white hover:file:bg-[#7C3AED]" />
+                    </div>
+                </div>
+
+                <!-- ตัวอย่างรูปแบนเนอร์ปัจจุบัน -->
+                <div id="bannerPreviewBox" class="@(string.IsNullOrEmpty(firstPromo?.BannerImage) ? "hidden" : "") pt-2">
+                    <label class="block text-xs text-gray-400 mb-1.5">แบนเนอร์ปัจจุบัน:</label>
+                    <img id="bannerPreviewImg" src="@(firstPromo?.BannerImage ?? "")" alt="Banner Preview"
+                         class="w-full max-h-40 object-cover rounded-xl border border-gray-800 bg-[#11121A]" />
+                </div>
+
+                <div class="pt-4 border-t border-gray-800 flex justify-end gap-3 mt-auto">
+                    <button type="button" onclick="resetPromoForm()" class="px-5 py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">
+                        ล้างค่า
+                    </button>
+                    <button type="submit" class="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white px-8 py-2.5 rounded-xl text-sm font-bold shadow-md transition-all">
+                        บันทึกโปรโมชั่น
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    function selectPromoToEdit(element, id, code, title, discount, isActive, bannerUrl) {
+        document.querySelectorAll('.promo-card').forEach(c => {
+            c.classList.remove('bg-[#1f2233]', 'border-2', 'border-[#8B5CF6]');
+            c.classList.add('bg-[#11121A]', 'border', 'border-gray-800');
+        });
+        element.classList.remove('bg-[#11121A]', 'border', 'border-gray-800');
+        element.classList.add('bg-[#1f2233]', 'border-2', 'border-[#8B5CF6]');
+
+        document.getElementById('promoFormTitle').textContent = 'แก้ไขโปรโมชั่น: ' + code;
+        document.getElementById('promoIdInput').value = id;
+        document.getElementById('deletePromoId').value = id;
+        document.getElementById('promoCodeInput').value = code;
+        document.getElementById('promoTitleInput').value = title;
+        document.getElementById('discountAmountInput').value = discount;
+        document.getElementById('promoStatusInput').value = isActive ? 'true' : 'false';
+        document.getElementById('deletePromoForm').classList.remove('hidden');
+
+        const previewBox = document.getElementById('bannerPreviewBox');
+        const previewImg = document.getElementById('bannerPreviewImg');
+        if (bannerUrl) {
+            previewImg.src = bannerUrl;
+            previewBox.classList.remove('hidden');
+        } else {
+            previewBox.classList.add('hidden');
+        }
+    }
+
+    function resetPromoForm() {
+        document.getElementById('promoFormTitle').textContent = 'สร้างโปรโมชั่นใหม่';
+        document.getElementById('promoIdInput').value = '0';
+        document.getElementById('promoCodeInput').value = '';
+        document.getElementById('promoTitleInput').value = '';
+        document.getElementById('discountAmountInput').value = '';
+        document.getElementById('promoStatusInput').value = 'true';
+        document.getElementById('deletePromoForm').classList.add('hidden');
+        document.getElementById('bannerPreviewBox').classList.add('hidden');
+    }
+
+    function filterPromos() {
+        const keyword = document.getElementById('promoSearchInput').value.toLowerCase();
+        document.querySelectorAll('.promo-card').forEach(card => {
+            const text = card.getAttribute('data-search');
+            card.style.display = text.includes(keyword) ? 'block' : 'none';
+        });
+    }
+</script>

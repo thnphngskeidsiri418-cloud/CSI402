@@ -1,0 +1,182 @@
+@using Thanaphong_7918_L005.Models
+@{
+    ViewData["Title"] = "ภาพรวมระบบ - แอดมิน";
+    Layout = "~/Views/Shared/_StaffLayout.cshtml";
+
+    decimal todaySales = ViewBag.TodaySales ?? 0m;
+    decimal monthSales = ViewBag.MonthSales ?? 0m;
+    int completedOrdersCount = ViewBag.CompletedOrdersCount ?? 0;
+    int pendingOrdersCount = ViewBag.PendingOrdersCount ?? 0;
+    int totalUsersCount = ViewBag.TotalUsersCount ?? 0;
+    int newUsersTodayCount = ViewBag.NewUsersTodayCount ?? 0;
+
+    var topGames = ViewBag.TopGames as IEnumerable<dynamic> ?? new List<dynamic>();
+    var packagesList = ViewBag.PackagesList as List<Package> ?? new List<Package>();
+
+    decimal maxRevenue = topGames.Any() ? topGames.Max(g => (decimal)g.TotalRevenue) : 1m;
+    if (maxRevenue <= 0) maxRevenue = 1m;
+}
+
+<div class="w-full max-w-7xl mx-auto space-y-6">
+    
+    <!-- แถบเมนูสลับโหมดด้านบน (4 ปุ่มของ Admin) -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <a href="/Admin/Index" class="bg-[#8B5CF6] text-white text-center py-3 rounded-full font-bold shadow-md transition-all">
+            ภาพรวม/สต๊อก
+        </a>
+        <a href="/Admin/ManageGames" class="bg-[#161823] hover:bg-[#1f2233] text-gray-300 border border-gray-700 text-center py-3 rounded-full font-bold transition-all">
+            จัดการเกม
+        </a>
+        <a href="/Admin/ManagePromotions" class="bg-[#161823] hover:bg-[#1f2233] text-gray-300 border border-gray-700 text-center py-3 rounded-full font-bold transition-all">
+            จัดการโปรโมชั่น
+        </a>
+        <a href="/Admin/ManageRoles" class="bg-[#161823] hover:bg-[#1f2233] text-gray-300 border border-gray-700 text-center py-3 rounded-full font-bold transition-all">
+            จัดการสิทธิ์
+        </a>
+    </div>
+
+    <!-- กล่องที่ 1: ภาพรวมผลประกอบการของระบบ (ดึงข้อมูลจริงจาก MySQL) -->
+    <div class="bg-[#161823] border border-gray-800 rounded-2xl p-6 shadow-lg">
+        <div class="flex justify-between items-center mb-5">
+            <h2 class="text-lg font-bold text-white">ภาพรวมผลประกอบการของระบบ</h2>
+            <span class="text-xs text-gray-400">อัปเดตล่าสุด: @DateTime.Now.ToString("dd/MM/yyyy HH:mm น.")</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- การ์ด 1: ยอดขายวันนี้ -->
+            <div class="bg-[#11121A] border border-gray-800 rounded-xl p-5">
+                <div class="text-xs text-gray-400 mb-1">ยอดขายวันนี้</div>
+                <div class="text-2xl font-extrabold text-white">฿@todaySales.ToString("N2")</div>
+                <div class="text-xs text-green-400 mt-1.5">ข้อมูลจริงจากออเดอร์วันนี้</div>
+            </div>
+
+            <!-- การ์ด 2: ยอดขายรวมเดือนนี้ -->
+            <div class="bg-[#11121A] border border-gray-800 rounded-xl p-5">
+                <div class="text-xs text-gray-400 mb-1">ยอดขายรวมเดือนนี้</div>
+                <div class="text-2xl font-extrabold text-white">฿@monthSales.ToString("N2")</div>
+                <div class="text-xs text-gray-400 mt-1.5">ประจำเดือน @DateTime.Now.ToString("MM/yyyy")</div>
+            </div>
+
+            <!-- การ์ด 3: คำสั่งซื้อสำเร็จทั้งหมด -->
+            <div class="bg-[#11121A] border border-gray-800 rounded-xl p-5">
+                <div class="text-xs text-gray-400 mb-1">คำสั่งซื้อสำเร็จทั้งหมด</div>
+                <div class="text-2xl font-extrabold text-white">
+                    @completedOrdersCount.ToString("N0") <span class="text-xs font-normal text-gray-400">รายการ</span>
+                </div>
+                <div class="text-xs text-yellow-400 mt-1.5">รอดำเนินการ @pendingOrdersCount รายการ</div>
+            </div>
+
+            <!-- การ์ด 4: ผู้ใช้งานในระบบ -->
+            <div class="bg-[#11121A] border border-gray-800 rounded-xl p-5">
+                <div class="text-xs text-gray-400 mb-1">ผู้ใช้งานในระบบ</div>
+                <div class="text-2xl font-extrabold text-white">
+                    @totalUsersCount.ToString("N0") <span class="text-xs font-normal text-gray-400">บัญชี</span>
+                </div>
+                <div class="text-xs text-purple-400 mt-1.5">สมาชิกใหม่วันนี้ +@newUsersTodayCount คน</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- กล่องด้านล่าง แบ่ง 2 ฝั่ง -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- ฝั่งซ้าย: เกมที่ทำยอดสูงสุด -->
+        <div class="bg-[#161823] border border-gray-800 rounded-2xl p-6 shadow-lg">
+            <h2 class="text-lg font-bold text-white mb-5">เกมที่ทำยอดสูงสุด</h2>
+
+            @if (!topGames.Any())
+            {
+                <div class="text-center py-10 text-gray-500 text-sm bg-[#11121A] rounded-xl border border-gray-800">
+                    ยังไม่มีรายการสั่งซื้อที่ชำระเงินแล้วในระบบ
+                </div>
+            }
+            else
+            {
+                <div class="space-y-4">
+                    @{ int rank = 1; }
+                    @foreach (var g in topGames)
+                    {
+                        decimal rev = (decimal)g.TotalRevenue;
+                        int percent = (int)Math.Round((rev / maxRevenue) * 100);
+                        string badgeColor = rank == 1 ? "bg-yellow-500/20 text-yellow-400" : (rank == 2 ? "bg-gray-400/20 text-gray-300" : "bg-orange-500/20 text-orange-400");
+
+                        <div class="bg-[#11121A] border border-gray-800 rounded-xl p-4">
+                            <div class="flex justify-between items-center mb-2.5">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="w-6 h-6 rounded-full @badgeColor text-xs font-bold flex items-center justify-center">@rank</span>
+                                    <span class="font-bold text-white text-sm">@g.GameName</span>
+                                    <span class="text-xs text-gray-500">(@g.OrderCount ออเดอร์)</span>
+                                </div>
+                                <span class="text-sm font-bold text-green-400">฿@rev.ToString("N2")</span>
+                            </div>
+                            <div class="w-full bg-gray-800 rounded-full h-2 overflow-hidden">
+                                <div class="bg-[#8B5CF6] h-2 rounded-full transition-all" style="width: @(percent)%"></div>
+                            </div>
+                        </div>
+                        rank++;
+                    }
+                </div>
+            }
+        </div>
+
+        <!-- ฝั่งขวา: รายการแพ็กเกจเกมที่เปิดให้บริการในระบบ -->
+        <div class="bg-[#161823] border border-gray-800 rounded-2xl p-6 shadow-lg">
+            <div class="flex justify-between items-center mb-5">
+                <h2 class="text-lg font-bold text-white">รายการแพ็กเกจเติมเงินล่าสุด</h2>
+                <a href="/Admin/ManageGames" class="text-xs text-[#8B5CF6] hover:text-purple-400 font-semibold">
+                    + จัดการเกม/แพ็กเกจ
+                </a>
+            </div>
+
+            @if (!packagesList.Any())
+            {
+                <div class="text-center py-10 text-gray-500 text-sm bg-[#11121A] rounded-xl border border-gray-800">
+                    ยังไม่มีรายการแพ็กเกจในฐานข้อมูล MySQL
+                </div>
+            }
+            else
+            {
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="border-b border-gray-800 text-xs text-gray-400">
+                                <th class="pb-3 font-medium">เกม / แพ็กเกจ</th>
+                                <th class="pb-3 font-medium text-right">ราคาขาย</th>
+                                <th class="pb-3 font-medium text-right">สถานะเกม</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-800">
+                            @foreach (var pkg in packagesList)
+                            {
+                                <tr>
+                                    <td class="py-3.5">
+                                        <div class="font-medium text-white">@pkg.PackageName</div>
+                                        <div class="text-xs text-gray-400">@(pkg.Game?.GameName ?? "-")</div>
+                                    </td>
+                                    <td class="py-3.5 text-right font-bold text-gray-200">
+                                        ฿@pkg.Price.ToString("N2")
+                                    </td>
+                                    <td class="py-3.5 text-right">
+                                        @if (pkg.Game?.IsActive == true)
+                                        {
+                                            <span class="text-xs bg-green-500/10 text-green-400 border border-green-500/20 px-2.5 py-0.5 rounded-full">
+                                                ปกติ
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-xs bg-red-500/10 text-red-400 border border-red-500/20 px-2.5 py-0.5 rounded-full">
+                                                ปิดปรับปรุง
+                                            </span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+
+    </div>
+</div>

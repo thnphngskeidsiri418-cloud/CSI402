@@ -1,14 +1,14 @@
-@model IEnumerable<Thanaphong_7918_L005.Models.UserViewModel>
+@model IEnumerable<Thanaphong_7918_L005.Models.User>
 
 @{
     ViewData["Title"] = "รายชื่อผู้ใช้ในระบบ";
-    Layout = "_RegisterLayout"; // หรือถ้าอยากให้แสดงเต็มจอ สามารถเปลี่ยนไปใช้ Layout หลักของเว็บได้ครับ
+    Layout = "_RegisterLayout";
 }
 
 <div class="w-full max-w-4xl mx-auto py-6">
     <div class="flex justify-between items-center mb-6">
         <h2 class="text-2xl font-bold text-white">รายชื่อผู้ใช้ในระบบ (User List)</h2>
-        <a href="/Home/AddUser" class="bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
+        <a href="/Home/Register" class="bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
             + เพิ่มผู้ใช้ใหม่
         </a>
     </div>
@@ -28,7 +28,7 @@
                 @foreach (var user in Model)
                 {
                     <tr class="hover:bg-gray-800/30 transition">
-                        <td class="py-3 px-4">@user.Id</td>
+                        <td class="py-3 px-4">@user.UserId</td>
                         <td class="py-3 px-4">@user.Email</td>
                         <td class="py-3 px-4">@user.Username</td>
                         <td class="py-3 px-4">

@@ -1,8 +1,168 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@model IEnumerable<Thanaphong_7918_L005.Models.Game>
+@using Thanaphong_7918_L005.Models
+@{
+    ViewData["Title"] = "หน้าหลัก";
+
+    var promoList = new List<Promotion>();
+    if (ViewBag.Promotions is IEnumerable<Promotion> multiPromos)
+    {
+        promoList = multiPromos.ToList();
+    }
+    else if (ViewBag.Banner is Promotion singlePromo)
+    {
+        promoList.Add(singlePromo);
+    }
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="flex flex-col items-center gap-10">
+    
+    <!-- ส่วน: โปรโมชั่น (Banner) เลื่อนวนอัตโนมัติ -->
+    <div id="promoCarousel" class="w-full max-w-3xl flex flex-col items-center gap-4">
+        
+        <div class="w-full h-64 border-2 border-black rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow relative">
+            @if (promoList.Any())
+            {
+                for (int i = 0; i < promoList.Count; i++)
+                {
+                    var promo = promoList[i];
+                    <div class="promo-slide w-full h-full relative"
+                         style="display: @(i == 0 ? "block" : "none");">
+                        @if (!string.IsNullOrEmpty(promo.BannerImage))
+                        {
+                            <img src="@promo.BannerImage" alt="@promo.Title" class="w-full h-full object-cover" />
+                        }
+                        else
+                        {
+                            <div class="w-full h-full bg-gradient-to-r from-[#2E1065] via-[#4C1D95] to-[#1E1B4B]"></div>
+                        }
+                        <div class="absolute bottom-3 left-3 bg-black/80 backdrop-blur-sm text-white text-xs px-3.5 py-2 rounded-lg shadow-lg border border-gray-700 z-10">
+                            โค้ดส่วนลด: <span class="text-[#8B5CF6] font-mono font-bold text-sm">@promo.PromoCode</span> (@promo.Title)
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="w-full h-full flex items-center justify-center">
+                    <span class="text-xl text-black">โปรโมชั่น</span>
+                </div>
+            }
+        </div>
+
+        <!-- จุดไข่ปลาเลื่อนสไลด์ (Carousel Indicators) -->
+        @if (promoList.Count > 1)
+        {
+            <div class="flex items-center gap-2.5 z-20">
+                @for (int i = 0; i < promoList.Count; i++)
+                {
+                    <button type="button"
+                            onclick="window.selectPromoSlide(@i)"
+                            aria-label="สไลด์ที่ @(i + 1)"
+                            class="promo-dot h-3 rounded-full cursor-pointer transition-all duration-300 @(i == 0 ? "w-6 bg-white" : "w-3 bg-gray-500 hover:bg-gray-300")">
+                    </button>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="flex gap-2">
+                <div class="w-3 h-3 rounded-full bg-gray-300"></div>
+                <div class="w-3 h-3 rounded-full bg-black"></div>
+            </div>
+        }
+    </div>
+
+    <!-- ส่วน: เกมแนะนำ (ดึงข้อมูลจริงจาก MySQL มาแสดงในกรอบเดิมของคุณ) -->
+    <div class="w-full">
+        <h2 class="text-2xl mb-4 text-left">เกมแนะนำ</h2>
+        
+        <!-- Grid แสดงรายการเกม -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+            @if (Model == null || !Model.Any())
+            {
+                <div class="col-span-full aspect-[5/1] border-2 border-black rounded-xl flex items-center justify-center bg-white text-black">
+                    <span class="text-base">ยังไม่มีเกมในระบบ (เพิ่มเกมได้ที่หน้าแอดมิน/พนักงาน)</span>
+                </div>
+            }
+            else
+            {
+                @foreach (var game in Model)
+                {
+                    <a href="/User/TopUp?gameId=@game.GameId" 
+                        class="group aspect-square border-2 border-black hover:border-[#8B5CF6] rounded-xl overflow-hidden bg-white hover:bg-gray-100 cursor-pointer transition-all flex flex-col shadow-sm">
+
+                        <div class="flex-1 w-full overflow-hidden bg-gray-100">
+                            <img src="@game.CoverImage" alt="@game.GameName"
+                                 onerror="this.src='https://placehold.co/400x400/161823/8B5CF6?text=GAME'"
+                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                        </div>
+
+                        <div class="py-2 px-3 bg-[#161823] text-white text-center border-t border-gray-800">
+                            <span class="text-sm font-bold truncate block group-hover:text-[#8B5CF6] transition-colors">
+                                @game.GameName
+                            </span>
+                        </div>
+                    </a>
+                }
+            }
+        </div>
+    </div>
+
 </div>
+
+<script>
+    (function () {
+        let currentIndex = 0;
+        let timerId = null;
+
+        function applySlide(nextIndex) {
+            const slides = document.querySelectorAll('#promoCarousel .promo-slide');
+            const dots = document.querySelectorAll('#promoCarousel .promo-dot');
+            if (slides.length <= 1) return;
+
+            currentIndex = ((nextIndex % slides.length) + slides.length) % slides.length;
+
+            slides.forEach((slide, idx) => {
+                slide.style.display = (idx === currentIndex) ? 'block' : 'none';
+            });
+
+            dots.forEach((dot, idx) => {
+                if (idx === currentIndex) {
+                    dot.classList.remove('w-3', 'bg-gray-500');
+                    dot.classList.add('w-6', 'bg-white');
+                } else {
+                    dot.classList.remove('w-6', 'bg-white');
+                    dot.classList.add('w-3', 'bg-gray-500');
+                }
+            });
+        }
+
+        function restartTimer() {
+            const slides = document.querySelectorAll('#promoCarousel .promo-slide');
+            if (slides.length <= 1) return;
+            if (timerId) clearInterval(timerId);
+            timerId = setInterval(function () {
+                applySlide(currentIndex + 1);
+            }, 3500);
+        }
+
+        window.selectPromoSlide = function (index) {
+            applySlide(index);
+            restartTimer();
+        };
+
+        const carousel = document.getElementById('promoCarousel');
+        if (carousel) {
+            carousel.addEventListener('mouseenter', function () {
+                if (timerId) clearInterval(timerId);
+            });
+            carousel.addEventListener('mouseleave', restartTimer);
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', restartTimer);
+        } else {
+            restartTimer();
+        }
+    })();
+</script>

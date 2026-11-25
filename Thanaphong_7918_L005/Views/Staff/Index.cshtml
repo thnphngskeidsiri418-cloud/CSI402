@@ -1,0 +1,201 @@
+@model IEnumerable<Thanaphong_7918_L005.Models.Order>
+@using System.Text.Json
+@{
+    ViewData["Title"] = "คิวเติมเกม - พนักงาน";
+    Layout = "~/Views/Shared/_StaffLayout.cshtml";
+
+    var waitingOrders = Model.Where(o => o.Status == "Paid").ToList();
+    var firstOrder = waitingOrders.FirstOrDefault() ?? Model.FirstOrDefault();
+}
+
+<div class="w-full max-w-7xl mx-auto">
+    
+    <!-- แถบเมนูสลับโหมดด้านบน (3 ปุ่ม) -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <a href="/Staff/Index" class="bg-[#8B5CF6] text-white text-center py-3 rounded-full font-bold shadow-md transition-all">
+            คิวเติมเกม (@waitingOrders.Count)
+        </a>
+        <a href="/Staff/ManageGames" class="bg-[#161823] hover:bg-[#1f2233] text-gray-300 border border-gray-700 text-center py-3 rounded-full font-bold transition-all">
+            จัดการเกม
+        </a>
+        <a href="/Staff/SupportChat" class="bg-[#161823] hover:bg-[#1f2233] text-gray-300 border border-gray-700 text-center py-3 rounded-full font-bold transition-all">
+            แชทช่วยเหลือลูกค้า
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="bg-green-500/10 border border-green-500/30 text-green-400 text-sm px-4 py-3 rounded-xl mb-4">
+            @TempData["Success"]
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-xl mb-4">
+            @TempData["Error"]
+        </div>
+    }
+
+    <!-- พื้นที่ทำงานหลัก แบ่ง 2 ฝั่ง (ซ้าย: รายการคำสั่งซื้อ | ขวา: รายละเอียด + อัปเดตสถานะ) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- ================= ฝั่งซ้าย: รายการคำสั่งซื้อที่ส่งมาจาก MySQL (5 คอลัมน์) ================= -->
+        <div class="lg:col-span-5 bg-[#161823] border border-gray-800 rounded-2xl p-5 flex flex-col h-[calc(100vh-230px)] shadow-lg">
+            <h2 class="text-lg font-bold text-white mb-4 pb-3 border-b border-gray-800 flex justify-between items-center">
+                <span>รายการคำสั่งซื้อที่ส่งมา</span>
+                <span class="text-xs bg-yellow-500/20 text-yellow-400 px-2.5 py-1 rounded-full">รอเติม @waitingOrders.Count รายการ</span>
+            </h2>
+
+            <!-- รายการออเดอร์ -->
+            <div class="flex-grow overflow-y-auto space-y-3 pr-1">
+                @if (!Model.Any())
+                {
+                    <div class="text-center py-10 text-gray-500 text-sm">
+                        ยังไม่มีคำสั่งซื้อที่อนุมัติแล้วเข้ามาในคิว
+                    </div>
+                }
+                else
+                {
+                    @foreach (var order in Model)
+                    {
+                        var isFirst = (firstOrder != null && order.OrderId == firstOrder.OrderId);
+                        var borderClass = isFirst ? "bg-[#1f2233] border-2 border-[#8B5CF6]" : "bg-[#11121A] hover:bg-[#1f2233] border border-gray-800";
+
+                        <div onclick='selectStaffOrder(this, @order.OrderId, @Html.Raw(JsonSerializer.Serialize(order.Package?.Game?.GameName ?? "-")), @Html.Raw(JsonSerializer.Serialize($"{order.Package?.PackageName} (฿{order.TotalPrice:N2})")), @Html.Raw(JsonSerializer.Serialize(order.GameUid)), @Html.Raw(JsonSerializer.Serialize(order.GameServer ?? "-")), "@order.Status")'
+                             class="order-card p-4 rounded-xl @borderClass cursor-pointer transition-all">
+                            <div class="flex justify-between items-start mb-1">
+                                <span class="font-bold text-white">#ORD-@order.OrderId.ToString("D4")</span>
+                                @if (order.Status == "Paid")
+                                {
+                                    <span class="text-xs bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 px-2 py-0.5 rounded-full">รอดำเนินการ</span>
+                                }
+                                else
+                                {
+                                    <span class="text-xs bg-green-500/10 text-green-400 border border-green-500/20 px-2 py-0.5 rounded-full">✔ เติมสำเร็จ</span>
+                                }
+                            </div>
+                            <div class="text-sm text-gray-300">@order.Package?.Game?.GameName - @order.Package?.PackageName</div>
+                            <div class="text-xs text-gray-400 mt-2 flex justify-between">
+                                <span>ลูกค้า: @order.User?.Username</span>
+                                <span>@order.CreatedAt.ToString("HH:mm น.")</span>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+        <!-- ================= ฝั่งขวา: รายละเอียด + ทางลัดแชท + อัปเดตสถานะ (7 คอลัมน์) ================= -->
+        <div class="lg:col-span-7 flex flex-col gap-4 h-[calc(100vh-230px)]">
+            
+            <!-- กล่อง 1: รายละเอียดคำสั่งซื้อที่ส่งมา -->
+            <div class="bg-[#161823] border border-gray-800 rounded-2xl p-6 shadow-lg flex-grow flex flex-col justify-between">
+                <div>
+                    <h3 class="text-lg font-bold text-white mb-4 pb-3 border-b border-gray-800">
+                        รายละเอียดคำสั่งซื้อที่ส่งมา 
+                        <span id="detailOrderCode" class="text-[#8B5CF6] ml-2">
+                            @(firstOrder != null ? $"#ORD-{firstOrder.OrderId:D4}" : "-")
+                        </span>
+                    </h3>
+                    <div class="grid grid-cols-2 gap-y-4 text-sm">
+                        <div class="text-gray-400">เกม:</div>
+                        <div id="detailGameName" class="text-white font-medium">@(firstOrder?.Package?.Game?.GameName ?? "-")</div>
+                        
+                        <div class="text-gray-400">แพ็กเกจ:</div>
+                        <div id="detailPackage" class="text-white font-medium">
+                            @(firstOrder != null ? $"{firstOrder.Package?.PackageName} (฿{firstOrder.TotalPrice:N2})" : "-")
+                        </div>
+                        
+                        <div class="text-gray-400">OpenID / UID ลูกค้า:</div>
+                        <div class="flex items-center gap-2">
+                            <span id="detailGameUid" class="text-yellow-400 font-bold select-all text-base">@(firstOrder?.GameUid ?? "-")</span>
+                            @if (firstOrder != null)
+                            {
+                                <button type="button" onclick="copyCurrentUid()" class="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 px-2.5 py-1 rounded-lg">คัดลอก</button>
+                            }
+                        </div>
+
+                        <div class="text-gray-400">Server:</div>
+                        <div id="detailServer" class="text-gray-200">@(string.IsNullOrEmpty(firstOrder?.GameServer) ? "-" : firstOrder.GameServer)</div>
+                        
+                        <div class="text-gray-400">สถานะการชำระเงิน:</div>
+                        <div id="detailStatusText" class="text-green-400 font-medium">
+                            @(firstOrder != null ? "ชำระเงินเรียบร้อยแล้ว (บัญชีอนุมัติ)" : "-")
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ทางลัดเปิดหน้าแชทช่วยเหลือลูกค้า -->
+                <div class="mt-6 pt-4 border-t border-gray-800 flex items-center justify-between bg-[#11121A] p-4 rounded-xl">
+                    <div>
+                        <div class="text-sm font-bold text-white">ต้องการสอบถามข้อมูลเพิ่มเติมกับลูกค้า?</div>
+                        <div class="text-xs text-gray-400">เปิดหน้าต่างแชทเพื่อเลือกรายชื่อลูกค้าและตอบกลับแบบรายบุคคล</div>
+                    </div>
+                    <a href="/Staff/SupportChat" class="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-colors shrink-0">
+                        เปิดหน้าแชทลูกค้า &rarr;
+                    </a>
+                </div>
+            </div>
+
+            <!-- กล่อง 2: อัปเดตสถานะงาน (เชื่อมต่อ Form ส่งเข้า MySQL จริง) -->
+            <div id="actionButtonBox" class="bg-[#161823] border border-gray-800 rounded-2xl p-5 flex items-center justify-between gap-4 shadow-lg @(firstOrder == null || firstOrder.Status != "Paid" ? "hidden" : "")">
+                <span class="text-sm font-bold text-white whitespace-nowrap">อัปเดตสถานะงาน:</span>
+                <div class="flex gap-3 w-full justify-end">
+                    <form method="post" asp-controller="Staff" asp-action="CancelOrder" onsubmit="return confirm('ยืนยันยกเลิกออเดอร์นี้เนื่องจาก UID ผิด?');">
+                        <input type="hidden" name="orderId" id="cancelOrderId" value="@(firstOrder?.OrderId ?? 0)" />
+                        <button type="submit" class="bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white border border-red-500/30 px-5 py-2.5 rounded-xl text-sm font-bold transition-all">
+                            ยกเลิก / UID ผิด
+                        </button>
+                    </form>
+
+                    <form method="post" asp-controller="Staff" asp-action="CompleteTopUp">
+                        <input type="hidden" name="orderId" id="completeOrderId" value="@(firstOrder?.OrderId ?? 0)" />
+                        <button type="submit" class="bg-green-600 hover:bg-green-500 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-md transition-all">
+                            ยืนยันเติมเกมสำเร็จ
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    function selectStaffOrder(element, orderId, gameName, pkgInfo, uid, server, status) {
+        document.querySelectorAll('.order-card').forEach(card => {
+            card.classList.remove('bg-[#1f2233]', 'border-2', 'border-[#8B5CF6]');
+            card.classList.add('bg-[#11121A]', 'border', 'border-gray-800');
+        });
+        element.classList.remove('bg-[#11121A]', 'border', 'border-gray-800');
+        element.classList.add('bg-[#1f2233]', 'border-2', 'border-[#8B5CF6]');
+
+        document.getElementById('detailOrderCode').textContent = '#ORD-' + String(orderId).padStart(4, '0');
+        document.getElementById('detailGameName').textContent = gameName;
+        document.getElementById('detailPackage').textContent = pkgInfo;
+        document.getElementById('detailGameUid').textContent = uid;
+        document.getElementById('detailServer').textContent = server || '-';
+
+        document.getElementById('cancelOrderId').value = orderId;
+        document.getElementById('completeOrderId').value = orderId;
+
+        const actionBox = document.getElementById('actionButtonBox');
+        if (status === 'Paid') {
+            actionBox.classList.remove('hidden');
+            document.getElementById('detailStatusText').textContent = 'ชำระเงินเรียบร้อยแล้ว (รอเติมเกม)';
+            document.getElementById('detailStatusText').className = 'text-yellow-400 font-medium';
+        } else {
+            actionBox.classList.add('hidden');
+            document.getElementById('detailStatusText').textContent = 'เติมเกมสำเร็จเรียบร้อยแล้ว';
+            document.getElementById('detailStatusText').className = 'text-green-400 font-medium';
+        }
+    }
+
+    function copyCurrentUid() {
+        const uid = document.getElementById('detailGameUid').textContent.trim();
+        if (uid && uid !== '-') {
+            navigator.clipboard.writeText(uid);
+            alert('คัดลอก UID: ' + uid + ' เรียบร้อยแล้ว!');
+        }
+    }
+</script>

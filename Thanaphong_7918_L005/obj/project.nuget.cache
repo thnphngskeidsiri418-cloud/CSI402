@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "ioQVEm+gUo0=",
+  "dgSpecHash": "qgmREgz+DyU=",
   "success": true,
-  "projectFilePath": "C:\\CSI402\\CSI402\\Thanaphong_7918_L005\\Thanaphong_7918_L005.csproj",
+  "projectFilePath": "c:\\CSI402\\CSI402\\Thanaphong_7918_L005\\Thanaphong_7918_L005.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\thnph\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
     "C:\\Users\\thnph\\.nuget\\packages\\microsoft.bcl.asyncinterfaces\\7.0.0\\microsoft.bcl.asyncinterfaces.7.0.0.nupkg.sha512",
@@ -32,5 +32,18 @@
     "C:\\Users\\thnph\\.nuget\\packages\\system.composition.runtime\\7.0.0\\system.composition.runtime.7.0.0.nupkg.sha512",
     "C:\\Users\\thnph\\.nuget\\packages\\system.composition.typedparts\\7.0.0\\system.composition.typedparts.7.0.0.nupkg.sha512"
   ],
-  "logs": []
+  "logs": [
+    {
+      "code": "NU1902",
+      "level": "Warning",
+      "message": "Package 'MySqlConnector' 2.4.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-473q-m89c-ghf8",
+      "projectPath": "c:\\CSI402\\CSI402\\Thanaphong_7918_L005\\Thanaphong_7918_L005.csproj",
+      "warningLevel": 1,
+      "filePath": "c:\\CSI402\\CSI402\\Thanaphong_7918_L005\\Thanaphong_7918_L005.csproj",
+      "libraryId": "MySqlConnector",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    }
+  ]
 }

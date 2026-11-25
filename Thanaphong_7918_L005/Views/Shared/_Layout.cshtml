@@ -1,49 +1,145 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Thanaphong_7918_L005</title>
-    <script type="importmap"></script>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <title>@ViewData["Title"] - เว็บเติมเกม</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/Thanaphong_7918_L005.styles.css" asp-append-version="true" />
 </head>
-<body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Thanaphong_7918_L005</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
+<!-- พื้นหลังสีเข้มตามรูปหน้า Login -->
+<body class="bg-[#11121A] text-white flex flex-col min-h-screen relative overflow-x-hidden">
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2569 - Thanaphong_7918_L005 - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+    <!-- ================= HEADER ================= -->
+    <header class="bg-[#161823] border-b border-gray-800 shadow-sm sticky top-0 z-30">
+        <div class="w-full px-6 md:px-8 h-16 flex items-center justify-between gap-4">
+            
+            <!-- ด้านซ้าย: เมนู Hamburger + LOGO -->
+            <div class="flex items-center gap-6 shrink-0">
+                <!-- ปุ่ม 3 ขีด -->
+                <button id="openMenuBtn" class="text-2xl hover:text-gray-400 transition-colors focus:outline-none">
+                    &#9776;
+                </button>
+                <a href="/" class="text-2xl font-bold tracking-wide">LOGO</a>
+            </div>
+
+            <!-- ตรงกลาง: ช่องค้นหาทรงแคปซูลขอบสีฟ้า + ไอคอนแว่นขยายด้านขวา -->
+            <form method="get" asp-controller="Home" asp-action="Index" class="flex-1 max-w-md mx-2">
+                <div class="relative flex items-center">
+                    <input type="text" name="search" value="@ViewBag.SearchTerm"
+                           placeholder="ค้นหาเกม เช่น ROV, Valorant, Roblox..."
+                           class="w-full bg-white text-gray-800 placeholder-gray-400 text-sm border-2 border-[#38BDF8] rounded-full pl-5 pr-11 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#38BDF8]/40 shadow-sm transition-all" />
+                    <button type="submit" class="absolute right-3.5 text-gray-500 hover:text-[#0284C7] transition-colors" title="ค้นหา">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 104.5 4.5a7.5 7.5 0 0012.15 12.15z" />
+                        </svg>
+                    </button>
+                </div>
+            </form>
+
+            <!-- ด้านขวา: คะแนน และปุ่มล็อกอิน / โปรไฟล์ -->
+            <div class="flex h-full items-center gap-5 text-sm font-medium text-gray-300 shrink-0">
+                <a href="/User/Rewards" class="hover:text-white transition-colors hidden sm:inline">คะแนน</a>
+
+                @if (User.Identity != null && User.Identity.IsAuthenticated)
+                {
+                    string profileUrl = User.IsInRole("Admin") ? "/Admin/Index"
+                                      : User.IsInRole("Accountant") ? "/Accountant/Index"
+                                      : User.IsInRole("Staff") ? "/Staff/Index"
+                                      : "/User/Settings";
+
+                    <a href="@profileUrl" class="flex items-center gap-2.5 bg-[#1f2233] hover:bg-[#282c42] border border-purple-500/40 text-white px-4 py-1.5 rounded-full transition-all shadow-sm">
+                        <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-[#8B5CF6] to-indigo-500 flex items-center justify-center text-xs font-bold text-white uppercase">
+                            @(User.Identity.Name?.Substring(0, 1) ?? "U")
+                        </div>
+                        <span class="font-semibold text-sm max-w-[110px] truncate">@User.Identity.Name</span>
+                    </a>
+                }
+                else
+                {
+                    <!-- ปุ่มลงทะเบียน/เข้าสู่ระบบ สีม่วง -->
+                    <a href="/Account/Login" class="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white px-5 py-2 rounded-md font-semibold transition-colors shadow-md">
+                        ลงทะเบียน/เข้าสู่ระบบ
+                    </a>
+                }
+            </div>
+        </div>
+    </header>
+
+    <!-- ================= SIDEBAR MENU (Dark Theme) ================= -->
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-60 hidden z-40 transition-opacity"></div>
+
+    <div id="sidebarMenu" class="fixed top-0 left-0 h-full w-80 bg-[#161823] border-r border-gray-800 transform -translate-x-full transition-transform duration-300 ease-in-out z-50 flex flex-col shadow-2xl">
+        
+        <div class="px-6 pt-4 pb-2">
+            <button id="closeMenuBtn" class="text-4xl text-gray-400 hover:text-white focus:outline-none leading-none">
+                &times;
+            </button>
+        </div>
+
+        <div class="flex flex-col px-10 py-4 gap-6 text-lg font-medium flex-grow text-gray-300">
+            <div class="text-2xl font-bold text-white mb-2">เมนูหลัก</div>
+            <a href="/" class="hover:text-white transition-colors">หน้าหลัก</a>
+            <a href="/User/Rewards" class="hover:text-white transition-colors">รางวัล</a>
+            <a href="/User/SupportChat" class="hover:text-white transition-colors">แชทสอบถาม</a>
+            <a href="/User/History" class="hover:text-white transition-colors">ประวัติการทำรายการ</a>
+            <a href="/User/Settings" class="hover:text-white transition-colors">ตั้งค่า</a>
+        </div>
+
+        <!-- ปุ่มออกจากระบบซ้ายล่าง -->
+        @if (User.Identity != null && User.Identity.IsAuthenticated)
+        {
+            <div class="px-10 py-6 border-t border-gray-800/80">
+                <a href="/Account/Logout"
+                   class="flex items-center gap-3 text-base font-semibold text-red-400 hover:text-red-300 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    <span>ออกจากระบบ</span>
+                </a>
+            </div>
+        }
+    </div>
+    <!-- ================= END SIDEBAR ================= -->
+
+    <!-- ================= MAIN CONTENT ================= -->
+    <main role="main" class="flex-grow w-full px-8 py-8">
+        @RenderBody()
+    </main>
+
+    <!-- ================= FOOTER ================= -->
+    <footer class="bg-[#11121A] py-6">
+        <div class="w-full text-center text-sm text-gray-500">
+            ช่องทางการติดต่อ/ขอความช่วยเหลือ/ช่องทางติดตามข่าวสาร
         </div>
     </footer>
+
+    <!-- JavaScript สำหรับ Sidebar -->
+    <script>
+        const sidebarMenu = document.getElementById('sidebarMenu');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const openMenuBtn = document.getElementById('openMenuBtn');
+        const closeMenuBtn = document.getElementById('closeMenuBtn');
+
+        function openMenu() {
+            sidebarMenu.classList.remove('-translate-x-full');
+            sidebarOverlay.classList.remove('hidden');
+        }
+
+        function closeMenu() {
+            sidebarMenu.classList.add('-translate-x-full');
+            sidebarOverlay.classList.add('hidden');
+        }
+
+        openMenuBtn.addEventListener('click', openMenu);
+        closeMenuBtn.addEventListener('click', closeMenu);
+        sidebarOverlay.addEventListener('click', closeMenu);
+    </script>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

@@ -1,0 +1,257 @@
+@using Microsoft.EntityFrameworkCore
+@using Thanaphong_7918_L005.Models
+@inject Csi402dbContext _context
+@{
+    // สถานะของออเดอร์ที่ถือว่าจบกระบวนการตรวจสลิปแล้ว (ใช้ List<string> เพื่อไม่ให้เกิด Error ReadOnlySpan)
+    var finishedOrderStatuses = new List<string> { "Paid", "Completed", "Rejected", "Cancelled", "Refunded", "ปฏิเสธแล้ว", "คืนเงินแล้ว", "เติมสำเร็จ" };
+
+    // 1. งานของฝ่ายบัญชี: รายการที่รอตรวจสลิป (เฉพาะออเดอร์ที่ยังค้างตรวจสอบและไม่ได้ทำเรื่องคืนเงิน)
+    var pendingSlips = await _context.Orders
+        .Include(o => o.User)
+        .Include(o => o.Package).ThenInclude(p => p.Game)
+        .Where(o => !finishedOrderStatuses.Contains(o.Status) 
+                 && !_context.Refunds.Any(r => r.OrderId == o.OrderId))
+        .OrderByDescending(o => o.CreatedAt)
+        .Take(10)
+        .ToListAsync();
+
+    // 2. งานของพนักงานเติมเกม (Staff): ออเดอร์ที่บัญชีอนุมัติแล้ว ("Paid") และรอเติมเกมเข้า UID
+    var waitingTopUps = await _context.Orders
+        .Include(o => o.User)
+        .Include(o => o.Package).ThenInclude(p => p.Game)
+        .Where(o => o.Status == "Paid")
+        .OrderByDescending(o => o.CreatedAt)
+        .Take(10)
+        .ToListAsync();
+
+    // 3. งานของฝ่ายบัญชี: คำร้องขอคืนเงินที่ยังรออนุมัติเท่านั้น
+    var finishedRefundStatuses = new List<string> { "Approved", "Rejected", "Completed", "Refunded", "อนุมัติแล้ว", "ปฏิเสธแล้ว" };
+    var pendingRefunds = await _context.Refunds
+        .Include(r => r.Order)
+        .Where(r => !finishedRefundStatuses.Contains(r.Status))
+        .OrderByDescending(r => r.RefundId)
+        .Take(10)
+        .ToListAsync();
+
+    bool isAdmin = User.IsInRole("Admin");
+    bool isStaff = User.IsInRole("Staff");
+    bool isAccountant = User.IsInRole("Accountant");
+
+    // นับจำนวนงานเข้าตามสิทธิ์ของผู้ที่ล็อกอินอยู่
+    int totalNotiCount = 0;
+    if (isAdmin)
+    {
+        totalNotiCount = waitingTopUps.Count + pendingSlips.Count + pendingRefunds.Count;
+    }
+    else if (isStaff)
+    {
+        totalNotiCount = waitingTopUps.Count;
+    }
+    else if (isAccountant)
+    {
+        totalNotiCount = pendingSlips.Count + pendingRefunds.Count;
+    }
+
+    string homeDashboardUrl = isAdmin ? "/Admin/Index" : (isAccountant ? "/Accountant/Index" : "/Staff/Index");
+}
+
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - ระบบจัดการหลังบ้าน</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Prompt', sans-serif; background-color: #0F1016; color: #F3F4F6; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bg-[#0F1016] text-gray-100">
+
+    <!-- ================= แถบ Header ด้านบน (ลบภาษาออก + กล่องแจ้งเตือนสไตล์ Notion) ================= -->
+    <header class="bg-[#161823] border-b border-gray-800/80 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            
+            <!-- ฝั่งซ้าย: LOGO + ป้าย Staff Panel -->
+            <div class="flex items-center gap-3">
+                <a href="@homeDashboardUrl" class="text-2xl font-extrabold tracking-wider text-white">
+                    LOGO
+                </a>
+                <span class="text-xs font-medium bg-[#8B5CF6]/20 text-[#A78BFA] border border-[#8B5CF6]/40 px-3 py-1 rounded-full">
+                    Staff Panel
+                </span>
+            </div>
+
+            <!-- ฝั่งขวา: แจ้งเตือน (จุดแดง + Notion Style) | โปรไฟล์ -->
+            <div class="flex items-center gap-5 text-sm">
+                
+                <!-- ปุ่มแจ้งเตือน + จุดแดง + Dropdown กล่องงานเข้า -->
+                <div class="relative">
+                    <button type="button" onclick="toggleNotiDropdown()"
+                            class="relative flex items-center gap-2 text-gray-300 hover:text-white py-1.5 px-2.5 rounded-lg hover:bg-gray-800/70 transition-colors">
+                        <span class="relative">
+                            แจ้งเตือน
+                            @if (totalNotiCount > 0)
+                            {
+                                <span class="absolute -top-1 -right-2.5 flex h-2.5 w-2.5">
+                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                                </span>
+                            }
+                        </span>
+                        @if (totalNotiCount > 0)
+                        {
+                            <span class="ml-1.5 bg-red-500 text-white text-[11px] font-bold px-1.5 py-0.2 rounded-full min-w-[20px] text-center shadow">
+                                @totalNotiCount
+                            </span>
+                        }
+                    </button>
+
+                    <!-- กล่องรายการแจ้งเตือนสไตล์ Notion -->
+                    <div id="notiDropdown"
+                         class="hidden absolute right-0 mt-2.5 w-96 bg-[#191B26] border border-gray-700/90 rounded-2xl shadow-2xl overflow-hidden z-50">
+                        
+                        <!-- หัวกล่องแจ้งเตือน -->
+                        <div class="px-4 py-3 border-b border-gray-800 flex items-center justify-between bg-[#141620]">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-white text-sm">Inbox งานเข้าใหม่</span>
+                                <span class="text-[11px] bg-[#8B5CF6]/20 text-[#A78BFA] px-2 py-0.5 rounded-md font-semibold">
+                                    @totalNotiCount รายการ
+                                </span>
+                            </div>
+                            <span class="text-[11px] text-gray-400">อัปเดตล่าสุด</span>
+                        </div>
+
+                        <!-- รายการงานเข้าตามบทบาท -->
+                        <div class="max-h-96 overflow-y-auto divide-y divide-gray-800/70">
+                            @if (totalNotiCount == 0)
+                            {
+                                <div class="py-10 px-4 text-center text-gray-500 text-xs">
+                                    ไม่มีงานค้างใหม่ในขณะนี้
+                                </div>
+                            }
+                            else
+                            {
+                                <!-- ส่วนที่ 1: แจ้งเตือนพนักงาน (Staff / Admin) - ออเดอร์รอเติมเกม -->
+                                @if (isStaff || isAdmin)
+                                {
+                                    @foreach (var order in waitingTopUps)
+                                    {
+                                        <a href="/Staff/Index" class="block px-4 py-3 hover:bg-[#222536] transition-colors">
+                                            <div class="flex items-start gap-3">
+                                                <span class="w-2.5 h-2.5 rounded-full bg-purple-500 mt-1.5 shrink-0"></span>
+                                                <div class="min-w-0 flex-1">
+                                                    <div class="flex justify-between items-center gap-2">
+                                                        <span class="text-xs font-bold text-purple-400">[งานเติมเกม] #ORD-@order.OrderId.ToString("D4")</span>
+                                                        <span class="text-[11px] text-gray-500">@order.CreatedAt.ToString("HH:mm น.")</span>
+                                                    </div>
+                                                    <p class="text-xs text-gray-200 mt-0.5 truncate">
+                                                        @(order.Package?.Game?.GameName ?? "เกม") - @(order.Package?.PackageName ?? "-")
+                                                    </p>
+                                                    <p class="text-[11px] text-gray-400 mt-0.5">
+                                                        ลูกค้า: @(order.User?.Username ?? "-") • บัญชีอนุมัติแล้ว รอเติมเข้า UID
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    }
+                                }
+
+                                <!-- ส่วนที่ 2: แจ้งเตือนฝ่ายบัญชี (Accountant / Admin) - สลิปรอตรวจสอบ & คำร้องขอคืนเงิน -->
+                                @if (isAccountant || isAdmin)
+                                {
+                                    @foreach (var slip in pendingSlips)
+                                    {
+                                        <a href="/Accountant/Index" class="block px-4 py-3 hover:bg-[#222536] transition-colors">
+                                            <div class="flex items-start gap-3">
+                                                <span class="w-2.5 h-2.5 rounded-full bg-amber-400 mt-1.5 shrink-0"></span>
+                                                <div class="min-w-0 flex-1">
+                                                    <div class="flex justify-between items-center gap-2">
+                                                        <span class="text-xs font-bold text-amber-400">[ตรวจสลิปโอนเงิน] #ORD-@slip.OrderId.ToString("D4")</span>
+                                                        <span class="text-[11px] text-gray-500">@slip.CreatedAt.ToString("HH:mm น.")</span>
+                                                    </div>
+                                                    <p class="text-xs text-gray-200 mt-0.5">
+                                                        ยอดโอน <span class="font-bold text-green-400">฿@slip.TotalPrice.ToString("N2")</span> จาก @(slip.User?.Username ?? "ลูกค้า")
+                                                    </p>
+                                                    <p class="text-[11px] text-gray-400 mt-0.5">
+                                                        รอฝ่ายบัญชีตรวจสอบสลิปและกดอนุมัติ
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    }
+
+                                    @foreach (var refItem in pendingRefunds)
+                                    {
+                                        <a href="/Accountant/Refunds" class="block px-4 py-3 hover:bg-[#222536] transition-colors">
+                                            <div class="flex items-start gap-3">
+                                                <span class="w-2.5 h-2.5 rounded-full bg-red-400 mt-1.5 shrink-0"></span>
+                                                <div class="min-w-0 flex-1">
+                                                    <div class="flex justify-between items-center gap-2">
+                                                        <span class="text-xs font-bold text-red-400">[คำร้องขอคืนเงิน] #ORD-@refItem.OrderId.ToString("D4")</span>
+                                                        <span class="text-[11px] text-gray-500">รออนุมัติ</span>
+                                                    </div>
+                                                    <p class="text-xs text-gray-200 mt-0.5 truncate">
+                                                        เหตุผล: @(string.IsNullOrEmpty(refItem.Reason) ? "แจ้งขอคืนเงิน" : refItem.Reason)
+                                                    </p>
+                                                    <p class="text-[11px] text-gray-400 mt-0.5">
+                                                        คลิกเพื่อตรวจสอบและอนุมัติคืนเงิน
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    }
+                                }
+                            }
+                        </div>
+
+                        <!-- แถบล่างของกล่องแจ้งเตือน -->
+                        <div class="px-4 py-2.5 bg-[#141620] border-t border-gray-800 text-center">
+                            <a href="@homeDashboardUrl" class="text-xs text-[#A78BFA] hover:underline font-medium">
+                                ไปยังหน้าจัดการงานทั้งหมด &rarr;
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <span class="text-gray-700">|</span>
+
+                <!-- ปุ่มโปรไฟล์ -->
+                <a href="/Staff/Profile" class="text-gray-300 hover:text-white transition-colors font-medium">
+                    โปรไฟล์
+                </a>
+
+            </div>
+        </div>
+    </header>
+
+    <!-- ================= เนื้อหาหลัก ================= -->
+    <main class="flex-grow py-8 px-6">
+        @RenderBody()
+    </main>
+
+    <!-- ================= Footer ================= -->
+    <footer class="border-t border-gray-800/60 py-4 text-center text-xs text-gray-500">
+        ระบบจัดการหลังบ้านสำหรับพนักงาน (Staff Workspace)
+    </footer>
+
+    <script>
+        function toggleNotiDropdown() {
+            const dropdown = document.getElementById('notiDropdown');
+            dropdown.classList.toggle('hidden');
+        }
+
+        // คลิกพื้นที่ว่างด้านนอกเพื่อปิดกล่องแจ้งเตือน
+        document.addEventListener('click', function (e) {
+            const dropdown = document.getElementById('notiDropdown');
+            const button = e.target.closest('button[onclick="toggleNotiDropdown()"]');
+            if (!button && dropdown && !dropdown.contains(e.target)) {
+                dropdown.classList.add('hidden');
+            }
+        });
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

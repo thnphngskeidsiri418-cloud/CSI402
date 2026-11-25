@@ -1,0 +1,331 @@
+@model Thanaphong_7918_L005.Models.Game
+@{
+    ViewData["Title"] = "เติมเกม - " + Model.GameName;
+    var activePromos = ViewBag.ActivePromotions as List<Thanaphong_7918_L005.Models.Promotion>
+                       ?? new List<Thanaphong_7918_L005.Models.Promotion>();
+}
+
+<div class="w-full max-w-6xl mx-auto">
+    
+    <div class="mb-6">
+        <a href="/" class="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors">
+            <span>&larr;</span> กลับไปหน้าเลือกเกมทั้งหมด
+        </a>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        <!-- ฝั่งซ้าย: ข้อมูลเกม -->
+        <div class="lg:col-span-4 bg-[#161823] border border-gray-800 rounded-2xl p-6 shadow-lg space-y-5">
+            <div class="flex flex-col items-center text-center">
+                <div class="w-36 h-36 rounded-2xl bg-gradient-to-tr from-[#8B5CF6] to-indigo-600 p-1 shadow-lg mb-4">
+                    <img src="@Model.CoverImage" alt="@Model.GameName"
+                         onerror="this.src='https://placehold.co/300x300/161823/8B5CF6?text=GAME'"
+                         class="w-full h-full rounded-xl object-cover bg-[#11121A]" />
+                </div>
+                <h1 class="text-xl font-bold text-white">@Model.GameName</h1>
+                <span class="text-xs text-green-400 bg-green-500/10 border border-green-500/20 px-3 py-0.5 rounded-full mt-2">
+                    ● ระบบอัตโนมัติ เข้าทันที
+                </span>
+            </div>
+
+            <hr class="border-gray-800" />
+
+            <div class="space-y-4 text-sm">
+                <div>
+                    <h2 class="font-bold text-white mb-1">รายละเอียดเกม</h2>
+                    <p class="text-gray-400 leading-relaxed">
+                        เติมคูปอง / เพชร ราคาสุดคุ้ม ปลอดภัย 100% ใช้เพียงแค่ User ID ไม่ต้องใช้รหัสผ่านในการเข้าสู่ระบบ
+                    </p>
+                </div>
+                <div>
+                    <h2 class="font-bold text-white mb-1.5">วิธีการเติม</h2>
+                    <ol class="list-decimal list-inside text-gray-400 space-y-1.5">
+                        <li>กรอก <span class="text-gray-200 font-medium">User ID</span> และเลือกเซิร์ฟเวอร์ (ถ้ามี)</li>
+                        <li>เลือกแพ็กเกจและช่องทางการชำระเงิน</li>
+                        <li>สแกน QR Code โอนเงินและแนบสลิปเพื่อยืนยัน</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <!-- ฝั่งขวา: ขั้นตอนการสั่งซื้อ -->
+        <div class="lg:col-span-8 space-y-6">
+            
+            <!-- ขั้นตอนที่ 1: ใส่ User ID -->
+            <div class="bg-[#161823] border border-gray-800 rounded-2xl p-6 shadow-lg">
+                <div class="flex items-center gap-3 mb-5">
+                    <span class="w-7 h-7 rounded-full bg-[#8B5CF6] text-white font-bold text-sm flex items-center justify-center">1</span>
+                    <h2 class="text-lg font-bold text-white">ใส่ User ID</h2>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input type="text" id="userIdInput" placeholder="ใส่ User ID ของคุณที่นี่" 
+                           class="w-full bg-[#11121A] text-white text-sm border border-gray-700 rounded-full px-5 py-3.5 focus:outline-none focus:border-[#8B5CF6]" />
+
+                    <select id="serverSelect" class="w-full bg-[#11121A] text-gray-300 text-sm border border-gray-700 rounded-full px-5 py-3.5 focus:outline-none focus:border-[#8B5CF6]">
+                        <option value="">เลือกเซิร์ฟเวอร์ (สำหรับเกมที่มีเซิร์ฟ)</option>
+                        <option value="Asia">Asia (เอเชีย)</option>
+                        <option value="TH">Thailand (ไทย)</option>
+                        <option value="SEA">SEA (เอเชียตะวันออกเฉียงใต้)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- ขั้นตอนที่ 2: เลือกแพ็กเกจ -->
+            <div class="bg-[#161823] border border-gray-800 rounded-2xl p-6 shadow-lg">
+                <div class="flex items-center gap-3 mb-5">
+                    <span class="w-7 h-7 rounded-full bg-[#8B5CF6] text-white font-bold text-sm flex items-center justify-center">2</span>
+                    <h2 class="text-lg font-bold text-white">เลือกแพ็กเกจที่ต้องการเติม</h2>
+                </div>
+
+                @if (Model.Packages == null || !Model.Packages.Any())
+                {
+                    <div class="text-center py-8 text-gray-500 text-sm bg-[#11121A] rounded-xl border border-gray-800">
+                        ยังไม่มีรายการแพ็กเกจสำหรับเกมนี้
+                    </div>
+                }
+                else
+                {
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4" id="packageGrid">
+                        @foreach (var pkg in Model.Packages)
+                        {
+                            <div onclick="selectPackage(this, @pkg.PackageId, '@pkg.PackageName', @pkg.Price)" 
+                                 class="package-card cursor-pointer bg-[#11121A] hover:bg-[#1f2233] border-2 border-gray-800 rounded-2xl p-5 flex flex-col items-center justify-center text-center transition-all group">
+                                <div class="text-2xl font-extrabold text-white group-hover:text-[#8B5CF6] mb-1">@pkg.ItemAmount</div>
+                                <div class="text-xs text-gray-400 mb-3 truncate w-full">@pkg.PackageName</div>
+                                <div class="w-full pt-2 border-t border-gray-800 text-sm font-bold text-green-400">
+                                    ฿@pkg.Price.ToString("N2")
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <!-- ขั้นตอนที่ 3: เลือกวิธีการชำระเงิน -->
+            <div class="bg-[#161823] border border-gray-800 rounded-2xl p-6 shadow-lg">
+                <div class="flex items-center gap-3 mb-5">
+                    <span class="w-7 h-7 rounded-full bg-[#8B5CF6] text-white font-bold text-sm flex items-center justify-center">3</span>
+                    <h2 class="text-lg font-bold text-white">กรุณาเลือกวิธีการชำระเงิน</h2>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- ช่องทางที่ 1: สแกนผ่านพร้อมเพย์ -->
+                    <div onclick="selectPaymentMethod(this, 'PromptPay')"
+                         class="payment-card cursor-pointer rounded-xl p-4 bg-[#1f2233] border-2 border-[#8B5CF6] transition-all flex flex-col justify-between">
+                        <div class="flex items-center gap-3.5 mb-3">
+                            <div class="w-12 h-12 rounded-xl bg-white p-1.5 flex items-center justify-center shrink-0">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c5/PromptPay-logo.png" alt="PromptPay" class="w-full h-full object-contain" />
+                            </div>
+                            <div>
+                                <div class="font-bold text-white text-sm">สแกนผ่านพร้อมเพย์</div>
+                                <div class="text-[11px] text-gray-400 mt-0.5">Thai QR Payment ทุกธนาคาร</div>
+                            </div>
+                        </div>
+                        <div class="bg-[#11121A] rounded-lg px-3 py-1.5 flex items-center gap-2 text-xs text-emerald-400 font-medium">
+                            <span>✔</span>
+                            <span>ไม่มีค่าธรรมเนียม</span>
+                        </div>
+                    </div>
+
+                    <!-- ช่องทางที่ 2: True Money Wallet -->
+                    <div onclick="selectPaymentMethod(this, 'TrueMoney')"
+                         class="payment-card cursor-pointer rounded-xl p-4 bg-[#11121A] hover:bg-[#1f2233] border border-gray-800 transition-all flex flex-col justify-between">
+                        <div class="flex items-center gap-3.5 mb-3">
+                            <div class="w-12 h-12 rounded-xl bg-white p-1.5 flex items-center justify-center shrink-0">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/TrueMoney_Wallet_Logo.svg/512px-TrueMoney_Wallet_Logo.svg.png" alt="TrueMoney" class="w-full h-full object-contain" />
+                            </div>
+                            <div>
+                                <div class="font-bold text-white text-sm">True Money Wallet</div>
+                                <div class="text-[11px] text-orange-400 mt-0.5">สแกน QR ผ่านแอปทรูมันนี่</div>
+                            </div>
+                        </div>
+                        <div class="bg-[#11121A] rounded-lg px-3 py-1.5 flex items-center gap-2 text-xs text-emerald-400 font-medium">
+                            <span>✔</span>
+                            <span>รองรับ TrueMoney (ไม่มีค่าธรรมเนียม)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ขั้นตอนที่ 4: โค้ดส่วนลด + สรุปยอด -->
+            <div class="bg-[#161823] border border-purple-500/30 rounded-2xl p-6 shadow-lg space-y-4">
+                <div class="space-y-1.5">
+                    <input type="text" id="promoCodeInput" oninput="recalcPrice()"
+                           placeholder="กรอกโค้ดส่วนลด (ถ้ามี)" 
+                           class="w-full bg-[#11121A] text-white uppercase text-sm border border-gray-700 rounded-xl px-4 py-2.5 focus:outline-none focus:border-[#8B5CF6]" />
+                    <p id="promoFeedback" class="text-xs text-gray-400"></p>
+                </div>
+
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2 border-t border-gray-800">
+                    <div>
+                        <div class="text-sm text-gray-400">แพ็กเกจที่เลือก: <span id="selectedPkgName" class="text-white font-bold">ยังไม่ได้เลือกแพ็กเกจ</span></div>
+                        <div class="text-2xl font-extrabold text-white mt-1 flex items-baseline gap-2">
+                            <span>ยอดชำระ: <span id="selectedPkgPrice" class="text-[#8B5CF6]">฿0.00</span></span>
+                            <span id="originalPkgPrice" class="text-sm text-gray-500 line-through hidden"></span>
+                        </div>
+                    </div>
+
+                    @if (User.Identity != null && User.Identity.IsAuthenticated)
+                    {
+                        <button type="button" onclick="openPaymentModal()" 
+                                class="w-full sm:w-auto bg-[#8B5CF6] hover:bg-[#7C3AED] text-white px-8 py-3.5 rounded-xl font-bold shadow-lg transition-all">
+                            ดำเนินการชำระเงิน
+                        </button>
+                    }
+                    else
+                    {
+                        <a href="/Account/Login" 
+                           class="w-full sm:w-auto text-center bg-gray-700 hover:bg-gray-600 text-white px-8 py-3.5 rounded-xl font-bold shadow-lg transition-all">
+                            เข้าสู่ระบบเพื่อสั่งซื้อ
+                        </a>
+                    }
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- ================= Modal ชำระเงิน & อัปโหลดสลิป ================= -->
+<div id="paymentModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-[#161823] border border-gray-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-5">
+        <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+            <h3 id="modalPaymentTitle" class="text-lg font-bold text-white">สแกนชำระเงิน (PromptPay)</h3>
+            <button type="button" onclick="closePaymentModal()" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+        </div>
+
+        <div class="bg-white rounded-xl p-4 flex flex-col items-center text-center">
+            <img id="modalQrImage" src="/images/qr/promptpay-qr.png" alt="QR Code" class="w-56 h-auto rounded-lg object-contain" />
+            <p class="text-lg font-extrabold text-[#7C3AED] mt-2">ยอดโอน: <span id="modalPriceText">฿0.00</span></p>
+        </div>
+
+        <form method="post" asp-controller="User" asp-action="CreateOrder" enctype="multipart/form-data" class="space-y-4">
+            <input type="hidden" name="packageId" id="formPackageId" />
+            <input type="hidden" name="gameUid" id="formGameUid" />
+            <input type="hidden" name="gameServer" id="formGameServer" />
+            <input type="hidden" name="promoCode" id="formPromoCode" />
+
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-1.5">อัปโหลดรูปสลิปการโอนเงิน *</label>
+                <input type="file" name="slipFile" accept="image/*" required
+                       class="w-full bg-[#11121A] text-gray-300 text-sm border border-gray-700 rounded-xl px-3 py-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-[#8B5CF6] file:text-white" />
+            </div>
+
+            <button type="submit" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl shadow-lg transition-all">
+                ยืนยันการแจ้งโอนเงิน
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    const activePromotions = [
+        @foreach (var p in activePromos)
+        {
+            <text>{ code: "@((p.PromoCode ?? "").Trim().ToUpper())", discount: @p.DiscountAmount.ToString(System.Globalization.CultureInfo.InvariantCulture), title: "@(p.Title ?? "")" },</text>
+        }
+    ];
+
+    let currentPackageId = 0;
+    let currentPackage = null;
+    let basePrice = 0;
+    let finalCalculatedPrice = 0;
+
+    function recalcPrice() {
+        const promoInput = document.getElementById('promoCodeInput');
+        const feedbackEl = document.getElementById('promoFeedback');
+        const priceEl = document.getElementById('selectedPkgPrice');
+        const origEl = document.getElementById('originalPkgPrice');
+
+        const code = (promoInput.value || '').trim().toUpperCase();
+        const found = activePromotions.find(item => item.code === code);
+
+        let discount = 0;
+        if (code !== '' && found) {
+            discount = parseFloat(found.discount) || 0;
+            feedbackEl.textContent = 'ใช้โค้ด ' + found.code + ' ลด ฿' + discount.toFixed(2);
+            feedbackEl.className = 'text-xs text-emerald-400';
+        } else if (code !== '') {
+            feedbackEl.textContent = 'ไม่พบโค้ดส่วนลดนี้ หรือโค้ดถูกปิดใช้งาน';
+            feedbackEl.className = 'text-xs text-red-400';
+        } else {
+            feedbackEl.textContent = '';
+            feedbackEl.className = 'text-xs text-gray-400';
+        }
+
+        finalCalculatedPrice = Math.max(0, basePrice - discount);
+        priceEl.textContent = '฿' + finalCalculatedPrice.toFixed(2);
+
+        if (basePrice > 0 && discount > 0) {
+            origEl.textContent = '฿' + basePrice.toFixed(2);
+            origEl.classList.remove('hidden');
+        } else {
+            origEl.classList.add('hidden');
+        }
+    }
+
+    function selectPackage(element, pkgId, pkgName, price) {
+        document.querySelectorAll('.package-card').forEach(card => {
+            card.classList.remove('border-[#8B5CF6]', 'bg-[#1f2233]');
+            card.classList.add('border-gray-800', 'bg-[#11121A]');
+        });
+
+        element.classList.remove('border-gray-800', 'bg-[#11121A]');
+        element.classList.add('border-[#8B5CF6]', 'bg-[#1f2233]');
+
+        currentPackageId = pkgId;
+        currentPackage = pkgName;
+        basePrice = parseFloat(price) || 0;
+        document.getElementById('selectedPkgName').textContent = pkgName;
+        recalcPrice();
+    }
+
+    function selectPaymentMethod(element, method) {
+        document.querySelectorAll('.payment-card').forEach(card => {
+            card.classList.remove('bg-[#1f2233]', 'border-2', 'border-[#8B5CF6]');
+            card.classList.add('bg-[#11121A]', 'border', 'border-gray-800');
+        });
+
+        element.classList.remove('bg-[#11121A]', 'border', 'border-gray-800');
+        element.classList.add('bg-[#1f2233]', 'border-2', 'border-[#8B5CF6]');
+
+        const modalTitle = document.getElementById('modalPaymentTitle');
+        const modalQr = document.getElementById('modalQrImage');
+
+        if (method === 'TrueMoney') {
+            modalTitle.textContent = 'สแกนชำระเงิน (TrueMoney Wallet)';
+            modalQr.src = '/images/qr/truemoney-qr.png';
+        } else {
+            modalTitle.textContent = 'สแกนชำระเงิน (PromptPay)';
+            modalQr.src = '/images/qr/promptpay-qr.png';
+        }
+    }
+
+    function openPaymentModal() {
+        const userId = document.getElementById('userIdInput').value.trim();
+        if (!userId) {
+            alert('กรุณากรอก User ID ของคุณก่อนดำเนินการชำระเงินครับ');
+            document.getElementById('userIdInput').focus();
+            return;
+        }
+        if (!currentPackageId) {
+            alert('กรุณาเลือกแพ็กเกจที่ต้องการเติมก่อนครับ');
+            return;
+        }
+
+        recalcPrice();
+        document.getElementById('formPackageId').value = currentPackageId;
+        document.getElementById('formGameUid').value = userId;
+        document.getElementById('formGameServer').value = document.getElementById('serverSelect').value;
+        document.getElementById('formPromoCode').value = document.getElementById('promoCodeInput').value.trim().toUpperCase();
+        document.getElementById('modalPriceText').textContent = '฿' + parseFloat(finalCalculatedPrice).toFixed(2);
+
+        document.getElementById('paymentModal').classList.remove('hidden');
+    }
+
+    function closePaymentModal() {
+        document.getElementById('paymentModal').classList.add('hidden');
+    }
+</script>

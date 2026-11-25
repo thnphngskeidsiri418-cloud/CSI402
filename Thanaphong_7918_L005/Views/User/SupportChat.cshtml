@@ -1,0 +1,76 @@
+@model IEnumerable<Thanaphong_7918_L005.Models.Message>
+@using System.Security.Claims
+@{
+    ViewData["Title"] = "แชทสอบถาม";
+    int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out int myId);
+}
+
+<div class="w-full flex flex-col h-[calc(100vh-160px)]"> <!-- เก็บความสูงพอดีจอเดิมของคุณ -->
+    
+    <!-- หัวข้อหน้า (ของเดิมคุณ) -->
+    <h1 class="text-2xl font-bold text-white mb-4">แชทสอบถาม</h1>
+
+    <!-- กล่องตัวแชทหลัก (ของเดิมคุณ) -->
+    <div class="flex flex-col flex-grow bg-[#161823] border border-purple-500/50 rounded-xl overflow-hidden shadow-lg">
+        
+        <!-- พื้นที่แสดงข้อความ (Scroll ได้ + ดึงข้อมูลจริงจาก MySQL) -->
+        <div id="chatBox" class="flex-grow p-6 overflow-y-auto space-y-4 flex flex-col">
+            
+            <!-- ข้อความต้อนรับจากระบบ (คงไว้ด้านบนสุดเหมือนเดิม) -->
+            <div class="flex justify-start">
+                <div class="bg-gray-800 text-gray-200 px-4 py-2 rounded-2xl rounded-tl-none max-w-[70%] shadow-md">
+                    สวัสดีครับ มีอะไรให้เราช่วยเหลือเกี่ยวกับการเติมเกมแจ้งไว้ได้เลยครับ พนักงานจะรีบตอบกลับโดยเร็วที่สุด
+                </div>
+            </div>
+
+            <!-- วนลูปแสดงประวัติการสนทนาจริงจาก MySQL -->
+            @if (Model != null)
+            {
+                @foreach (var msg in Model)
+                {
+                    if (msg.SenderId == myId)
+                    {
+                        <!-- ข้อความฝั่งลูกค้า (ชิดขวา สีม่วง) -->
+                        <div class="flex justify-end">
+                            <div class="bg-[#8B5CF6] text-white px-4 py-2 rounded-2xl rounded-tr-none max-w-[70%] shadow-md">
+                                <div>@msg.MessageText</div>
+                                <div class="text-[10px] text-purple-200 text-right mt-1">@msg.SentAt.ToString("HH:mm")</div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- ข้อความตอบกลับจากทีมงาน (ชิดซ้าย สีเทาเข้ม) -->
+                        <div class="flex justify-start">
+                            <div class="bg-gray-800 text-gray-200 px-4 py-2 rounded-2xl rounded-tl-none max-w-[70%] shadow-md">
+                                <div class="text-xs font-bold text-[#8B5CF6] mb-0.5">ทีมงาน (@(msg.Sender?.Username ?? "Admin"))</div>
+                                <div>@msg.MessageText</div>
+                                <div class="text-[10px] text-gray-400 mt-1">@msg.SentAt.ToString("HH:mm")</div>
+                            </div>
+                        </div>
+                    }
+                }
+            }
+            
+        </div>
+
+        <!-- กล่องพิมพ์ข้อความ (เปลี่ยนเป็น Form ส่งเข้า MySQL จริง) -->
+        <form method="post" asp-controller="User" asp-action="SendMessage" class="p-4 bg-[#11121A] border-t border-gray-800 flex gap-3">
+            <input type="text" name="messageText" id="messageInput" required
+                   class="flex-grow bg-[#161823] text-white border border-gray-700 rounded-full px-6 py-3 focus:outline-none focus:border-[#8B5CF6] transition-colors" 
+                   placeholder="พิมพ์ข้อความที่นี่..." 
+                   autocomplete="off" />
+                   
+            <button type="submit" 
+                    class="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white px-8 py-3 rounded-full font-bold transition-colors">
+                ส่ง
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- JavaScript เลื่อนหน้าจอแชทลงมาล่างสุดอัตโนมัติเมื่อเปิดหน้า -->
+<script>
+    const chatBox = document.getElementById('chatBox');
+    chatBox.scrollTop = chatBox.scrollHeight;
+</script>

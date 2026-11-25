@@ -14,4 +14,10 @@ public partial class User
     public string Email { get; set; } = null!;
 
     public string Role { get; set; } = null!;
+
+    public int Points { get; set; }
+
+    public virtual ICollection<Message> Messages { get; set; } = new List<Message>();
+
+    public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
 }

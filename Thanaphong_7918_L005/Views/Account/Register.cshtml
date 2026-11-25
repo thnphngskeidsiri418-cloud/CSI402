@@ -1,33 +1,50 @@
-@model Thanaphong_7918_L005.Models.RegisterViewModel
-
 @{
-    ViewData["Title"] = "ลงทะเบียน";
-    Layout = "_RegisterLayout";
+    ViewData["Title"] = "สมัครสมาชิก";
 }
 
-<form asp-action="Register" asp-controller="Account" method="post" class="space-y-4">
-    
-    <div>
-        <input type="email" asp-for="Email" placeholder="ใส่ Email ของคุณที่นี่" 
-               class="w-full bg-[#0f111a] border border-gray-700 rounded-full py-3 px-4 text-center text-gray-200 placeholder-gray-500 focus:outline-none focus:border-purple-500 transition" required />
-    </div>
-    
-    <div>
-        <input type="text" asp-for="Name" placeholder="ชื่อผู้ใช้ที่ทำการสั่งซื้อ" 
-               class="w-full bg-[#0f111a] border border-gray-700 rounded-full py-3 px-4 text-center text-gray-200 placeholder-gray-500 focus:outline-none focus:border-purple-500 transition" required />
-    </div>
-    
-    <!-- ช่องกรอก Password -->
-    <div>
-        <input type="password" asp-for="Password" placeholder="ใส่รหัสผ่าน" 
-               class="w-full bg-[#0f111a] border border-gray-700 rounded-full py-3 px-4 text-center text-gray-200 placeholder-gray-500 focus:outline-none focus:border-purple-500 transition" required />
-    </div>
-    
-    <div class="pt-2">
-        <button type="submit" 
-                class="w-full bg-white hover:bg-gray-200 text-gray-900 font-bold py-3 rounded-full transition shadow-md">
-            ต่อไป
-        </button>
-    </div>
+<div class="min-h-[calc(100vh-200px)] flex items-center justify-center px-4">
+    <div class="max-w-md w-full bg-[#161823] border border-gray-800 rounded-2xl p-8 shadow-xl">
+        <h2 class="text-2xl font-bold text-white text-center mb-6">สมัครสมาชิกใหม่</h2>
 
-</form>
+        @if (ViewBag.Error != null)
+        {
+            <div class="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-xl mb-4">
+                @ViewBag.Error
+            </div>
+        }
+
+        <form method="post" asp-controller="Account" asp-action="Register" class="space-y-4">
+            <div>
+                <label class="block text-sm text-gray-300 mb-1">ชื่อผู้ใช้ (Username)</label>
+                <input type="text" name="username" required placeholder="กรอกชื่อผู้ใช้..."
+                       class="w-full bg-[#11121A] text-white text-sm border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:border-[#8B5CF6]" />
+            </div>
+
+            <div>
+                <label class="block text-sm text-gray-300 mb-1">อีเมล (Email)</label>
+                <input type="email" name="email" required placeholder="example@email.com"
+                       class="w-full bg-[#11121A] text-white text-sm border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:border-[#8B5CF6]" />
+            </div>
+
+            <div>
+                <label class="block text-sm text-gray-300 mb-1">รหัสผ่าน (Password)</label>
+                <input type="password" name="password" required placeholder="ตั้งรหัสผ่าน..."
+                       class="w-full bg-[#11121A] text-white text-sm border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:border-[#8B5CF6]" />
+            </div>
+
+            <div>
+                <label class="block text-sm text-gray-300 mb-1">ยืนยันรหัสผ่าน</label>
+                <input type="password" name="confirmPassword" required placeholder="กรอกรหัสผ่านอีกครั้ง..."
+                       class="w-full bg-[#11121A] text-white text-sm border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:border-[#8B5CF6]" />
+            </div>
+
+            <button type="submit" class="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-bold py-3 rounded-xl shadow-md transition-all mt-2">
+                สมัครสมาชิก
+            </button>
+        </form>
+
+        <p class="text-center text-sm text-gray-400 mt-6">
+            มีบัญชีอยู่แล้ว? <a href="/Account/Login" class="text-[#8B5CF6] hover:underline font-medium">เข้าสู่ระบบ</a>
+        </p>
+    </div>
+</div>
