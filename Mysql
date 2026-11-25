@@ -1,0 +1,76 @@
+CREATE DATABASE CSI402DB;
+USE CSI402DB;
+
+CREATE TABLE Users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    email VARCHAR(100) NOT NULL,
+    role VARCHAR(20) NOT NULL
+);
+
+CREATE TABLE Games (
+    game_id INT AUTO_INCREMENT PRIMARY KEY,
+    game_name VARCHAR(100) NOT NULL,
+    cover_image VARCHAR(255),
+    is_active BOOLEAN
+);
+
+CREATE TABLE Packages (
+    package_id INT AUTO_INCREMENT PRIMARY KEY,
+    game_id INT NOT NULL,
+    package_name VARCHAR(100) NOT NULL,
+    price DECIMAL(10,2) NOT NULL,
+    item_amount INT NOT NULL,
+    FOREIGN KEY (game_id) REFERENCES Games(game_id)
+);
+USE CSI402DB;
+
+-- 1. เพิ่มคอลัมน์แต้มสะสม (points) ในตาราง Users เดิมของคุณ
+ALTER TABLE Users ADD COLUMN points INT NOT NULL DEFAULT 0;
+
+-- 2. ตารางคำสั่งซื้อ (หัวใจหลักเชื่อม ลูกค้า -> ฝ่ายบัญชี -> พนักงานเติมเกม)
+CREATE TABLE Orders (
+    order_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    package_id INT NOT NULL,
+    game_uid VARCHAR(100) NOT NULL,       -- เลข UID / OpenID / Riot ID ของลูกค้า
+    game_server VARCHAR(50),              -- เซิร์ฟเวอร์ที่ลูกค้าเลือก (ถ้ามี)
+    total_price DECIMAL(10,2) NOT NULL,   -- ยอดเงินที่ต้องชำระจริง (หลังหักส่วนลด)
+    slip_image VARCHAR(255),              -- รูปสลิปโอนเงินที่ลูกค้าอัปโหลด
+    status VARCHAR(30) NOT NULL DEFAULT 'PendingPayment', 
+    -- สถานะ: PendingPayment (รอตรวจสลิป), Paid (บัญชีอนุมัติแล้ว/รอเติม), Completed (เติมสำเร็จ), Rejected (สลิปไม่ผ่าน), Refunded (คืนเงินแล้ว)
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES Users(user_id),
+    FOREIGN KEY (package_id) REFERENCES Packages(package_id)
+);
+
+-- 3. ตารางโปรโมชั่นและโค้ดส่วนลด (สำหรับ Admin จัดการโปรโมชั่น + แบนเนอร์หน้าแรก)
+CREATE TABLE Promotions (
+    promo_id INT AUTO_INCREMENT PRIMARY KEY,
+    promo_code VARCHAR(30) NOT NULL UNIQUE, -- เช่น NEWUSER50
+    title VARCHAR(100) NOT NULL,
+    discount_amount DECIMAL(10,2) NOT NULL, -- ส่วนลด (บาท)
+    banner_image VARCHAR(255),              -- รูปแบนเนอร์โชว์หน้าแรก
+    is_active BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+-- 4. ตารางคำร้องขอคืนเงิน (เชื่อม ลูกค้า -> ฝ่ายบัญชี)
+CREATE TABLE Refunds (
+    refund_id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    reason TEXT NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'Pending', -- Pending, Approved, Rejected
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (order_id) REFERENCES Orders(order_id)
+);
+
+-- 5. ตารางแชทสอบถาม (เชื่อม ลูกค้า <-> Admin/Staff)
+CREATE TABLE Messages (
+    message_id INT AUTO_INCREMENT PRIMARY KEY,
+    sender_id INT NOT NULL,
+    receiver_id INT NULL,                 -- NULL = ส่งหาทีมงานส่วนกลาง
+    message_text TEXT NOT NULL,
+    sent_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (sender_id) REFERENCES Users(user_id)
+);
